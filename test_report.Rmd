@@ -1,0 +1,104 @@
+---
+title: "Test_report"
+author: "Kieran Fox"
+date: "11/02/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+setwd('C:/Users/Kieran/Desktop/NE')
+source('./data_prep_figure3.R')
+```
+
+The setup part
+
+```{r import}
+name_gl <- get_names('rename_habitat.csv')
+name_swap_vector <- name_gl[[1]]
+bb_list <- name_gl[[2]]
+bp_list <- name_gl[[3]]
+
+df_all <- read_all_data('all_plots.csv')
+# Taking the data from just one site
+df_site <- filter(df_all, SITECODE == 'B02')
+print(unique(df_site$BAP_BROAD))
+print(unique(df_site$BAP_PRIORITY))
+df_site <- fix_names(df_site)
+
+# transform the eastings and northings into latitude and longitude
+df_site <- transform_coords(df_site)
+
+# Making the sub dataframes with only the major habitats selected
+#object[[1]] is the data frame. object[[2]] is the list of habitats
+df_site.bb <- select_by('BAP_BROAD', 20)
+df_site.bp <- select_by('BAP_PRIORITY', 15)
+df_site.nvcb <- select_by('NVC_groupb', 15)
+df_site.nvcc <- select_by('NVC_groupc', 15)
+
+# the centre points of the maps
+centre_coords <- get_centre_coords(df_site)
+east_cent <- centre_coords[[1]]
+north_cent <- centre_coords[[2]]
+
+unique_years <- unique(df_site$YEAR)
+unique_habs <- unique(df_site$BAP_BROAD)
+# these columns give inofrmation about the plot but aren't quantitatively comp
+track_cols <- c('PLOT_ID', 'coords.easting', 'coords.northing', 'BAP_BROAD',
+                'BAP_PRIORITY', 'NVC_groupb', 'NVC_groupc')
+# these columns wil be compared between years
+change_cols <- c('Species_richness', 'Species_diversity', 'LIGHT', 'WETNESS',
+                 'PH', 'FERTILITY', 'COMPETITION', 'STRESS', 'RUDERALS',
+                 'MEAN_HEIGHT', 'litter', 'bare.x')
+
+total_change <- get_change_by_year(df_site)
+```
+
+## Including Plots
+
+
+You can also embed plots, for example:
+
+```{r pressure}
+plot_feat_by_hab_year('NVC_groupc', 'FERTILITY')
+```
+hello this much stuff woooow
+
+```{r pressure}
+# Showing the proportion of each NVC group in each bap habitat
+# with years next to each other showing change
+habitat_by_habitat('BAP_BROAD', 'NVC_groupc')
+```
+
+
+wow! even more?
+
+
+```{r pressure}
+map_feature(df_site, 'Species_richness')
+```
+
+woop
+
+
+
+```{r pressure}
+map_feature_by_hab(df_site, 'NVC_groupc', 'Species_richness')
+```
+
+
+```{r pressure}
+map_change('PH', norm=FALSE)
+```
+
+
+
+
+
+
+
+
+
+
+
+
