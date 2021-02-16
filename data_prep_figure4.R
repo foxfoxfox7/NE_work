@@ -266,7 +266,7 @@ habitat_by_habitat <- function(group, count){
     
     ss <- ggplot(df_hab, aes(fill=.data[[count]], y=n, x=YEAR)) +
       geom_bar(position="stack", stat="identity")
-    print(ss)
+    print(ss + ggtitle(hab_list[ii]))
   }
   
 }
@@ -297,6 +297,7 @@ map_feature <- function(df, feature) {
                      color = ~pal(df_feature[[feature]]),
                      stroke = FALSE, fillOpacity = 0.5) %>%
     addLegend(pal = pal_rev, values = ~df_feature[[feature]],
+              title = feature,
               labFormat = labelFormat(transform =
                                         function(x) sort(x, decreasing = TRUE)))
   
@@ -304,34 +305,32 @@ map_feature <- function(df, feature) {
   m
 }
 
-map_feature_by_hab <- function(df, habitat, feature, size_mod=3) {
+map_feature_by_hab <- function(df, habitat, feature, size_mod=3, year_sel=3) {
   
   unique_habs1 <- unique(df[[habitat]])
   #factpal <- colorFactor(topo.colors(length(bb_list)), bb_list)
   factpal_site <- colorFactor(topo.colors(length(unique_habs1)), unique_habs1)
   
-  #year_map_list = list()
-  for (ii in 1:length(unique_years)) {
-    
-    df_year <- df %>% filter(YEAR == unique_years[ii])
-    
-    n <- leaflet(df_year) %>%
-      addTiles() %>%
-      setView(lng=east_cent, lat=north_cent, zoom = 14.3) %>%
-      addCircleMarkers(lng = ~coords.easting, lat = ~coords.northing,
-                       radius = ~df_year[[feature]]/size_mod,
-                       color = ~factpal_site(df_year[[habitat]]),
-                       stroke = FALSE, fillOpacity = 0.8) %>%
-      addLegend(pal = factpal_site, values = ~df_year[[habitat]], opacity = 1)
-    
-    #year_map_list[[ii]] <- m
-    mapshot(n, file = 'map_habitat.png')
-    print(n)
-  }
-  #print(year_map_list[[length(unique_years)]])
+
+  df_year <- df %>% filter(YEAR == unique_years[year_sel])
+  
+  n <- leaflet(df_year) %>%
+    addTiles() %>%
+    setView(lng=east_cent, lat=north_cent, zoom = 14.3) %>%
+    addCircleMarkers(lng = ~coords.easting, lat = ~coords.northing,
+                     radius = ~df_year[[feature]]/size_mod,
+                     color = ~factpal_site(df_year[[habitat]]),
+                     stroke = FALSE, fillOpacity = 0.8) %>%
+    addLegend(pal = factpal_site, values = ~df_year[[habitat]], opacity = 1,
+              title = habitat)
+  
+
+  #mapshot(n, file = 'map_habitat.png')
+  n
+
 }
 
-map_change <- function(feature, norm=TRUE){
+map_change <- function(feature, norm=TRUE, year_sel=3){
   
   # Getting the names of the columns (feature and feature_norm)
   if (norm) {
@@ -350,23 +349,24 @@ map_change <- function(feature, norm=TRUE){
                              domain = pf_domain,
                              reverse = TRUE)
   
-  for (ii in 1:(length(unique_years)-1)) {
+
     
-    # Setting up the dataframe for analysis, filtering by year and omiting NAs
-    df_year_pf <- total_change %>% filter(YEAR == unique_years[ii+1]) %>%
-      .[!is.na(.[ ,pf_col]),]
-    
-    m <- leaflet(df_year_pf) %>%
-      addTiles() %>%
-      setView(lng=east_cent, lat=north_cent, zoom = 14) %>%
-      addCircleMarkers(lng = ~coords.easting, lat = ~coords.northing,
-                       color = pf_pal(df_year_pf[[pf_col]]),
-                       stroke = FALSE, fillOpacity = 0.8) %>%
-      addLegend(pal = pf_pal, values = df_year_pf[[pf_col]])#,
-    #labFormat = labelFormat(transform =
-    #function(x) sort(x, decreasing = TRUE)))
-    print(m)
-  }
+  # Setting up the dataframe for analysis, filtering by year and omiting NAs
+  df_year_pf <- total_change %>% filter(YEAR == unique_years[year_sel]) %>%
+    .[!is.na(.[ ,pf_col]),]
+
+  ll <- leaflet(df_year_pf) %>%
+    addTiles() %>%
+    setView(lng=east_cent, lat=north_cent, zoom = 14) %>%
+    addCircleMarkers(lng = ~coords.easting, lat = ~coords.northing,
+                     color = pf_pal(df_year_pf[[pf_col]]),
+                     stroke = FALSE, fillOpacity = 0.8) %>%
+    addLegend(pal = pf_pal, values = df_year_pf[[pf_col]],
+              title = feature)#,
+  #labFormat = labelFormat(transform =
+  #function(x) sort(x, decreasing = TRUE)))
+  ll
+
 }
 
 
