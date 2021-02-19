@@ -4,114 +4,75 @@ library(htmlwidgets)
 
 
 
-data <- data.frame(ID = c("1", "2","3","4","5","6","7","8", '9'),
-                   Name = c("2010", "2010", "2010", "2014", "2014", "2019", 
-                            "2019", "2019", '2019'),
-                   LIGHT = c(12,43,54,34,23,77,44,22, 33),
-                   Value2 = c(6,5,2,7,5,6,4,3, 2),
-                   Lat = c(51.1, 51.6, 57.3, 52.4, 56.3, 54.3, 60.4, 49.2, 50),
-                   Lon = c(5, -3, -2, -1, 4, 3, -5, 0, 1))
+setwd('C:/Users/Kieran/Desktop/NE/NE_work')
+getwd()
+source('./data_prep_figure4.R')
+
+
+name_gl <- get_names('rename_habitat.csv')
+name_swap_vector <- name_gl[[1]]
+bb_list <- name_gl[[2]]
+bp_list <- name_gl[[3]]
+
+df_all <- read_all_data('all_plots.csv')
+# Taking the data from just one site
+df_site <- filter(df_all, SITECODE == 'B15')
+df_site <- fix_names(df_site)
+
+# transform the eastings and northings into latitude and longitude
+df_site <- transform_coords(df_site)
+df_site <- df_site[!duplicated(df_site[ ,c('PLOT_ID', 'YEAR')]), ]
+
+df_site$unique_id2 <- as.character(1:length(df_site$PLOT_ID)) %>%
+  str_pad(., width = 25, side = 'right', pad = 'z')
+print(names(df_site))
+########################################
+
+# the centre points of the maps
+centre_coords <- get_centre_coords(df_site)
+east_cent <- centre_coords[[1]]
+north_cent <- centre_coords[[2]]
+
+
+
+data <- data.frame(ID = df_site$unique_id2,
+                   Name = df_site$BAP_BROAD,
+                   Species_diversity = df_site$Species_diversity,
+                   Species_richness = df_site$Species_richness,
+                   Lat = df_site$coords.northing,
+                   Lon = df_site$coords.easting)
+
 data %>%
-  leaflet() %>%
-  addProviderTiles(providers$CartoDB.Positron) %>%
-  addCircles(lat=~Lat, 
-             lng=~Lon, 
-             radius = ~LIGHT*1000, 
-             group=~Name, 
-             label=~Name, 
-             popup=~as.character(LIGHT), 
-             layerId = ~paste(ID,"LIGHT", sep="")) %>%
-  addCircles(lat=~Lat, 
-             lng=~Lon, 
-             radius = ~Value2, 
-             group=~Name, 
-             label=~Name, 
-             popup=~as.character(Value2), 
-             layerId = ~paste(ID,"Value2", sep="")) %>%
-  addLayersControl(
-    baseGroups = c("LIGHT", "Value2"),
-    overlayGroups = c("2010", "2014", "2019"),
-    options = layersControlOptions(collapsed = F)
-  ) %>%
-  htmlwidgets::onRender("
-    function(el, x) {
-      var myMap = this;
-      var baseLayer = 'Value1';
-      myMap.eachLayer(function(layer){
-        var id = layer.options.layerId;
-        if (id){
-          if ('Value1' !== id.substring(1,)){
-            layer.getElement().style.display = 'none';
-          }
-        }
-      })
-      console.log(myMap.baselayer);
-      myMap.on('baselayerchange',
-        function (e) {
-          baseLayer=e.name;
-          myMap.eachLayer(function (layer) {
-              var id = layer.options.layerId;
-              if (id){
-                if (e.name !== id.substring(1,)){
-                  layer.getElement().style.display = 'none';
-                  layer.closePopup();
-                }
-                if (e.name === id.substring(1,)){
-                  layer.getElement().style.display = 'block';
-                }
-              }
-
-          });
-        })
-        myMap.on('overlayadd', function(e){
-          myMap.eachLayer(function(layer){
-            var id = layer.options.layerId;
-            if (id){
-                if (baseLayer !== id.substring(1,)){
-                  layer.getElement().style.display = 'none';
-                }
-            }    
-          })
-        })
-    }")
-
-
-
-
-
-df_site2 %>%
   leaflet() %>%
   addTiles() %>%
   setView(lng=east_cent, lat=north_cent, zoom = 14) %>%
-  addCircleMarkers(lat=~coords.northing, 
-                   lng=~coords.easting, 
-                   color = ~pal_f(FERTILITY),
-                   stroke = FALSE, fillOpacity = 0.7,
-                   group=~YEAR, 
-                   label=~YEAR, 
-                   popup=~as.character(FERTILITY), 
-                   layerId = ~paste(PLOT_ID,"FERTILITY", sep="")) %>%
-  addCircleMarkers(lat=~coords.northing, 
-                   lng=~coords.easting, 
-                   color = ~pal_w(WETNESS),
-                   stroke = FALSE, fillOpacity = 0.7, 
-                   group=~YEAR, 
-                   label=~YEAR, 
-                   popup=~as.character(WETNESS), 
-                   layerId = ~paste(PLOT_ID,"WETNESS", sep="")) %>%
+  addCircles(lat=~Lat, 
+             lng=~Lon, 
+             radius = ~Species_diversity, 
+             group=~Name, 
+             label=~Name, 
+             popup=~as.character(Species_diversity), 
+             layerId = ~paste(ID,"Species_diversity", sep="")) %>%
+  addCircles(lat=~Lat, 
+             lng=~Lon, 
+             radius = ~Species_richness, 
+             group=~Name, 
+             label=~Name, 
+             popup=~as.character(Species_richness), 
+             layerId = ~paste(ID,"Species_richness", sep="")) %>%
   addLayersControl(
-    baseGroups = c("FERTILITY", "WETNESS"),
-    overlayGroups = c('2010', '2014', '2019'),
+    baseGroups = c("Species_diversity", "Species_richness"),
+    overlayGroups = unique(df_site$BAP_BROAD),
     options = layersControlOptions(collapsed = F)
   ) %>%
   htmlwidgets::onRender("
     function(el, x) {
       var myMap = this;
-      var baseLayer = 'Value1';
+      var baseLayer = 'Species_diversity';
       myMap.eachLayer(function(layer){
         var id = layer.options.layerId;
         if (id){
-          if ('Value1' !== id.substring(1,)){
+          if ('Species_diversity' !== id.substring(1,)){
             layer.getElement().style.display = 'none';
           }
         }
@@ -145,4 +106,5 @@ df_site2 %>%
           })
         })
     }")
+
 

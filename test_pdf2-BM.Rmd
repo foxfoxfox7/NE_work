@@ -10,7 +10,7 @@ output:
 
 ```{r setup, echo=FALSE, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-setwd('C:/Users/Kieran/Desktop/NE/NE_work')
+#setwd('C:/Users/Kieran/Desktop/NE/NE_work')
 source('./data_prep_figure4.R')
 
 library(janitor)
@@ -26,7 +26,7 @@ bp_list <- name_gl[[3]]
 
 df_all <- read_all_data('all_plots.csv')
 # Taking the data from just one site
-df_site <- filter(df_all, SITECODE == 'B02')
+df_site <- filter(df_all, SITECODE == 'B14')
 print(unique(df_site$BAP_BROAD))
 print(unique(df_site$BAP_PRIORITY))
 df_site <- fix_names(df_site)
@@ -58,6 +58,29 @@ change_cols <- c('Species_richness', 'Species_diversity', 'LIGHT', 'WETNESS',
 
 total_change <- get_change_by_year(df_site)
 ```
+
+
+```{r test_int_map}
+
+int_map_feat(df_site, c('LIGHT', 'WETNESS', 'PH', 'FERTILITY'))
+
+```
+
+
+```{r test_int_map2}
+
+int_map_feat(df_site, c('STRESS', 'COMPETITION', 'RUDERALS'))
+
+```
+
+
+```{r test_int_map3}
+
+int_map_feat_by_hab(df_site, c('Species_richness', 'Species_diversity'))
+
+```
+
+
 
 # Describing the nvc habitats
 

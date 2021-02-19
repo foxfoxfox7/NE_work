@@ -3,7 +3,8 @@ library(leaflet)
 library(htmlwidgets)
 
 
-setwd('C:/Users/Kieran/Desktop/NE/NE_work')
+setwd("C:/Users/kiera/Work/NE_work")
+getwd()
 source('./data_prep_figure4.R')
 
 
@@ -14,106 +15,72 @@ bp_list <- name_gl[[3]]
 
 df_all <- read_all_data('all_plots.csv')
 # Taking the data from just one site
-df_site <- filter(df_all, SITECODE == 'B15')
-print(unique(df_site$BAP_BROAD))
-print(unique(df_site$BAP_PRIORITY))
-df_site <- fix_names(df_site)
-
+df <- filter(df_all, SITECODE == 'B14') %>%
+  fix_names(.) %>%
 # transform the eastings and northings into latitude and longitude
-df_site <- transform_coords(df_site)
+  transform_coords(.)
 
-# Making the sub dataframes with only the major habitats selected
-#object[[1]] is the data frame. object[[2]] is the list of habitats
-df_site.bb <- select_by('BAP_BROAD', 20)
-df_site.bp <- select_by('BAP_PRIORITY', 15)
-df_site.nvcb <- select_by('NVC_groupb', 15)
-df_site.nvcc <- select_by('NVC_groupc', 15)
+df$BAP_BROAD[is.na(df$BAP_BROAD)] <- 'NA'
 
-# the centre points of the maps
-centre_coords <- get_centre_coords(df_site)
+df$unique_id2 <- as.character(1:length(df$PLOT_ID)) %>%
+  str_pad(., width = 25, side = 'right', pad = 'z')
+
+################
+
+features <- c('MEAN_HEIGHT', 'litter', 'bare.x')
+print(names(df))
+centre_coords <- get_centre_coords(df)
 east_cent <- centre_coords[[1]]
 north_cent <- centre_coords[[2]]
 
-unique_years <- unique(df_site$YEAR)
-unique_habs <- unique(df_site$BAP_BROAD)
-# these columns give inofrmation about the plot but aren't quantitatively comp
-track_cols <- c('PLOT_ID', 'coords.easting', 'coords.northing', 'BAP_BROAD',
-                'BAP_PRIORITY', 'NVC_groupb', 'NVC_groupc')
-# these columns wil be compared between years
-change_cols <- c('Species_richness', 'Species_diversity', 'LIGHT', 'WETNESS',
-                 'PH', 'FERTILITY', 'COMPETITION', 'STRESS', 'RUDERALS',
-                 'MEAN_HEIGHT', 'litter', 'bare.x')
+list_of_years <- unique(df$YEAR)
+list_of_habs <- unique(df$BAP_BROAD)
+print(list_of_habs)
 
-total_change <- get_change_by_year(df_site)
+df <- df %>%
+  filter(YEAR == list_of_years[length(list_of_years)])
 
-df_site2 <- df_site[!is.na(df_site[ ,'LIGHT']),]
+#################
 
-# make palette
-domain <- range(df_site2[['FERTILITY']])
-pal_f <- colorNumeric(palette = "Purples", domain = domain)
-
-# make palette
-domain <- range(df_site2[['WETNESS']])
-pal_w <- colorNumeric(palette = "Purples", domain = domain)
-
-######################
-
-df_site2$unique_id <- paste(df_site2$PLOT_ID, df_site2$YEAR, sep='_')
-df_site2$unique_id2 <- as.character(1:length(df_site2$PLOT_ID))
-print(df_site2$unique_id2)
-
-list_of_years <- unique(df_site2$YEAR)
-list_of_feats <- c('WETNESS', 'PH', 'FERTILITY', 'LIGHT')
-
-# list_of_palettes <- list()
-# for (jj in 1:length(list_of_feats)) {
-#   domain <- range(df_site2[[list_of_feats[jj]]])
-#   pal <- colorNumeric(palette = "Purples", domain = domain)
-#   list_of_palettes[[jj]] <- pal
-# }
-
-pal_test <- colorNumeric(palette = "Purples", domain = c(0,10))
-
-m <- leaflet() %>%
+m <- leaflet(df) %>%
   addTiles() %>%
   setView(lng=east_cent, lat=north_cent, zoom = 14)
 
-for (ii in 1:length(list_of_years)) {
+for (jj in 1:length(features)) {
+  
+  #df_feat <- subset(df, !is.na(df[,features[jj]]))
 
-  df_site_year <- df_site2 %>%
-    filter(YEAR == list_of_years[ii])
-
-  for (jj in 1:length(list_of_feats)) {
-    
-    #pal_cont <- list_of_palettes[jj]
-
-    m <- addCircleMarkers(
-      map = m,
-      lat=df_site_year$coords.northing, 
-      lng=df_site_year$coords.easting, 
-      color = pal_test(df_site_year[[list_of_feats[jj]]]),
-      stroke = FALSE, fillOpacity = 0.7,
-      group=list_of_years[ii], 
-      label=list_of_years[ii], 
-      popup=as.character(df_site_year[[list_of_feats[jj]]]), 
-      #layerId = paste(df_site_year$unique_id2, list_of_feats[jj], sep=""))
-      layerId = paste(df_site_year$unique_id2, list_of_feats[jj], sep=""))
-  }
+  #domain <- quantile(df_feat[[features[jj]]], probs = seq(0, 1, 1/40))[c(2,40)]
+  domain <- range(df_feat[[features[jj]]])
+  pal <- colorNumeric(palette = "Purples", domain = domain)
+  
+  m <- addCircleMarkers(
+    map = m,
+    lat=~coords.northing, 
+    lng=~coords.easting,
+    #color = ~factpal_site(BAP_BROAD),
+    color = pal(df_feat[[features[jj]]]),
+    #radius = ~((df_feat[[features[jj]]] / max(df_feat[[features[jj]]])) * 10),
+    stroke = FALSE, fillOpacity = 1,
+    group=~BAP_BROAD, 
+    label=df_feat[[features[jj]]], 
+    layerId = ~paste(unique_id2, features[jj], sep="")) %>%
+    addLegend(pal = pal,
+              values = df[[features[jj]]],
+              title = features[jj],
+              position = 'bottomleft',
+              group = features[jj])
+  
 }
 
-m <- addLayersControl(map = m,
-    baseGroups = list_of_feats,
-    overlayGroups = list_of_years,
-    options = layersControlOptions(collapsed = F)
-  ) %>%
-  htmlwidgets::onRender("
+widget_text <- sprintf("
     function(el, x) {
       var myMap = this;
-      var baseLayer = 'WETNESS';
+      var baseLayer = '%s';
       myMap.eachLayer(function(layer){
         var id = layer.options.layerId;
         if (id){
-          if ('WETNESS' !== id.substring(1,)){
+          if ('%s' !== id.substring(25,)){
             layer.getElement().style.display = 'none';
           }
         }
@@ -125,11 +92,11 @@ m <- addLayersControl(map = m,
           myMap.eachLayer(function (layer) {
               var id = layer.options.layerId;
               if (id){
-                if (e.name !== id.substring(1,)){
+                if (e.name !== id.substring(25,)){
                   layer.getElement().style.display = 'none';
                   layer.closePopup();
                 }
-                if (e.name === id.substring(1,)){
+                if (e.name === id.substring(25,)){
                   layer.getElement().style.display = 'block';
                 }
               }
@@ -140,11 +107,32 @@ m <- addLayersControl(map = m,
           myMap.eachLayer(function(layer){
             var id = layer.options.layerId;
             if (id){
-                if (baseLayer !== id.substring(1,)){
+                if (baseLayer !== id.substring(25,)){
                   layer.getElement().style.display = 'none';
                 }
-            }    
+            }
           })
         })
+    }", features[1], features[1])
+
+m <- addLayersControl(map = m,
+                      baseGroups = features,
+                      overlayGroups = list_of_habs,
+                      options = layersControlOptions(collapsed = F)) %>%
+  htmlwidgets::onRender(
+    widget_text
+  ) %>%
+  htmlwidgets::onRender("
+    function(el, x) {
+      var updateLegend = function () {
+          var selectedGroup = document.querySelectorAll('input:checked')[0].nextSibling.innerText.substr(1);
+
+          document.querySelectorAll('.legend').forEach(a => a.hidden=true);
+          document.querySelectorAll('.legend').forEach(l => {
+            if (l.children[0].children[0].innerText == selectedGroup) l.hidden=false;
+          });
+      };
+      updateLegend();
+      this.on('baselayerchange', e => updateLegend());
     }")
 m
