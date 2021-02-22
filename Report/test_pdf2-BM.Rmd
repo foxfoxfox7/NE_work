@@ -10,10 +10,8 @@ output:
 
 ```{r setup, echo=FALSE, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-#setwd('C:/Users/Kieran/Desktop/NE/NE_work')
+setwd('C:/Users/kiera/Work/NE_work')
 source('./data_prep_figure4.R')
-
-library(janitor)
 ```
 
 This is an example of a report to send to site managers. It wouldn't need to have the author, its just added as default. When these reports are finalised, I will definitely make them more pretty, this is just to give you an idea of the content. This is an HTML report rather than PDF so that the maps can be a little interactive.
