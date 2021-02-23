@@ -36,9 +36,13 @@ get_names <- function(file_name) {
   # Renaming some of the habitat names as they are too far off and wont be found
   name_swap <- read.csv(file_name)
   
-  name_swap_vector <- with(name_swap, setNames(right_name, wrong_name))
-  name_swap_vector <- name_swap_vector[!is.na(name_swap_vector)]
-  name_swap_vector <- name_swap_vector[name_swap_vector != ""]
+  name_swap_bap <- with(name_swap, setNames(right_name, wrong_name))
+  name_swap_bap <- name_swap_bap[!is.na(name_swap_bap)]
+  name_swap_bap <- name_swap_bap[name_swap_bap != ""]
+  
+  name_swap_nvc <- with(name_swap, setNames(NVC_name, NVC_code))
+  name_swap_nvc <- name_swap_nvc[!is.na(name_swap_nvc)]
+  name_swap_nvc <- name_swap_nvc[name_swap_nvc != ""]
   
   # Getting the lsit of approved names for bap broad and priorty
   bb_list <- name_swap$Bap_broad
@@ -48,20 +52,18 @@ get_names <- function(file_name) {
   bp_list <- bp_list[!is.na(bp_list)]
   bp_list <- bp_list[bp_list != ""]
   
-  return(list(name_swap_vector, bb_list, bp_list))
+  return(list(name_swap_bap, name_swap_nvc, bb_list, bp_list))
 }
 
-# This function selects only the most frequent habitat types to analyse
-select_by <- function(category, cutoff) {
-  table_cat <- as.data.frame(table(df_site[[category]]))
-  cat_selection <- table_cat %>%
-    filter(Freq > cutoff) %>%
-    .$Var1
+name_swap <- function(vector, names) {
   
-  selected_df <- df_site[df_site[[category]] %in% cat_selection, ]
-  output_list <- list(selected_df, cat_selection)
+  for (jj in 1:length(names)) {
+    vector <- replace(
+      vector,
+      vector == names(names[jj]), names[jj])
+  }
   
-  return(output_list)
+  return(vector)
 }
 
 rename <- function(input, list_comp, naming_cutoff=0.2) {
@@ -80,15 +82,16 @@ rename <- function(input, list_comp, naming_cutoff=0.2) {
   }
 }
 
-fix_names <- function(df) {
+fix_names <- function(df, name_swap_vector) {
 
   # Replacing know errors with the correct versions
   # (when they are too far away from the correct version for the auto to do it)
-  for (jj in 1:length(name_swap_vector)) {
-    df$BAP_BROAD <- replace(
-      df$BAP_BROAD,
-      df$BAP_BROAD == names(name_swap_vector[jj]), name_swap_vector[jj])
-  }
+  # for (jj in 1:length(name_swap_vector)) {
+  #   df$BAP_BROAD <- replace(
+  #     df$BAP_BROAD,
+  #     df$BAP_BROAD == names(name_swap_vector[jj]), name_swap_vector[jj])
+  # }
+  df$BAP_BROAD <- name_swap(df$BAP_BROAD, name_swap_vector)
 
   # Renaming any typos in the bap habitats and changing to NA when they don't
   # match our list of habitats
@@ -97,6 +100,19 @@ fix_names <- function(df) {
 
   
   return(df)
+}
+
+# This function selects only the most frequent habitat types to analyse
+select_by <- function(category, cutoff) {
+  table_cat <- as.data.frame(table(df_site[[category]]))
+  cat_selection <- table_cat %>%
+    filter(Freq > cutoff) %>%
+    .$Var1
+  
+  selected_df <- df_site[df_site[[category]] %in% cat_selection, ]
+  output_list <- list(selected_df, cat_selection)
+  
+  return(output_list)
 }
 
 # Converts EASTINGS and NORTHINGS to longitude and latitude

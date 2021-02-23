@@ -6,7 +6,7 @@ library(diverse)
 library(openxlsx)
 
 
-setwd('//CAM381FS/x955120$/Projects/Reports')
+setwd('C:/Users/kiera/Work/NE_work/Dataframe')
 getwd()
 
 
@@ -14,7 +14,7 @@ getwd()
 # Reading in information from disk
 ################################################################################
 
-data <- './Data/'
+data <- '../Data_set/'
 list_of_files <- list.files(data)
 N_files <- length(list_of_files)
 print(list_of_files)
@@ -339,10 +339,10 @@ blank_check <- c('Species_richness', 'bare x', 'NVC_FIRST', 'MEAN_HEIGHT')
 blank_len <- length(blank_check)
 survey_total <- survey_total[rowSums(is.na(survey_total[,blank_check]))!=blank_len,]
 
-write.csv(survey_total, 'All_plots_ceh.csv')
+write.csv(survey_total, 'report_plots.csv', row.names = FALSE)
 
 wb <- createWorkbook()
-survey_sheet <- addWorksheet(wb, 'All surveys')
+survey_sheet <- addWorksheet(wb, 'presentation_plots')
 writeData(wb, survey_sheet, survey_total)
-saveWorkbook(wb, 'All_surveys.xlsx')
+saveWorkbook(wb, 'presentation_surveys.xlsx')
 

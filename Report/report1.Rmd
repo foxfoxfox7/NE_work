@@ -13,17 +13,22 @@ source('./data_prep_figure4.R')
 ```
 
 ```{r import, include=FALSE}
-name_gl <- get_names('rename_habitat.csv')
-name_swap_vector <- name_gl[[1]]
-bb_list <- name_gl[[2]]
-bp_list <- name_gl[[3]]
+name_swap_bap <- get_names('rename_habitat.csv')[[1]]
+name_swap_nvc <- get_names('rename_habitat.csv')[[2]]
+bb_list <- get_names('rename_habitat.csv')[[3]]
+bp_list <- get_names('rename_habitat.csv')[[4]]
 
-df_all <- read_all_data('all_plots.csv')
+#df_all <- read_all_data('all_plots.csv')
+df_all <- read_csv('report_plots.csv')
+
 # Taking the data from just one site
 df_site <- filter(df_all, SITECODE == 'B14') %>%
-  fix_names(.) %>%
+  fix_names(., name_swap_bap) %>%
 # transform the eastings and northings into latitude and longitude
   transform_coords(.)
+
+# Converts the NVC abbreviations to the full names
+df$NVC_groupc <- name_swap(df$NVC_groupc, name_swap_nvc)
 
 # Making the sub dataframes with only the major habitats selected
 #object[[1]] is the data frame. object[[2]] is the list of habitats
@@ -97,3 +102,166 @@ plot_feat_by_hab_year('BAP_BROAD', 'Species_diversity')
 #MAP OF CHANGE
 ```
 
+
+### Individual species plot
+```{r individual_species}
+# A PLOT OF INDIVIDUAL SPCESIES
+```
+
+# Last year's vegetation height, bare ground and litter
+
+```{r physical_map}
+int_map_feat_by_hab(df_site, c('MEAN_HEIGHT', 'litter', 'bare x'))
+```
+
+### Vegetation height
+
+###### Average change over the years
+
+```{r av_change_veg_height}
+plot_feat_by_hab_year('BAP_BROAD', 'MEAN_HEIGHT')
+```
+
+###### Map of change
+
+```{r map_change_veg_height}
+#MAP OF CHANGE
+```
+
+### Litter
+
+###### Average change over the years
+
+```{r av_change_litter}
+plot_feat_by_hab_year('BAP_BROAD', 'litter')
+```
+
+###### Map of change
+
+```{r map_change_litter}
+#MAP OF CHANGE
+```
+
+### Bare ground
+
+###### Average change over the years
+
+```{r av_change_bare}
+plot_feat_by_hab_year('BAP_BROAD', 'bare x')
+```
+
+###### Map of change
+
+```{r map_change_bare}
+#MAP OF CHANGE
+```
+
+# Last year's Ellenberg scores
+
+```{r ellenberg_map}
+int_map_feat_by_hab(df_site, c('LIGHT', 'FERTILITY', 'PH', 'WETNESS'))
+```
+
+### Light
+
+###### Average change over the years
+
+```{r av_change_light}
+plot_feat_by_hab_year('BAP_BROAD', 'LIGHT')
+```
+
+###### Map of change
+
+```{r map_change_light}
+#MAP OF CHANGE
+```
+
+### Fertility
+
+###### Average change over the years
+
+```{r av_change_fertility}
+plot_feat_by_hab_year('BAP_BROAD', 'FERTILITY')
+```
+
+###### Map of change
+
+```{r map_change_fertility}
+#MAP OF CHANGE
+```
+
+### pH
+
+###### Average change over the years
+
+```{r av_change_ph}
+plot_feat_by_hab_year('BAP_BROAD', 'PH')
+```
+
+###### Map of change
+
+```{r map_change_ph}
+#MAP OF CHANGE
+```
+
+### Wetness
+
+###### Average change over the years
+
+```{r av_change_wetness}
+plot_feat_by_hab_year('BAP_BROAD', 'WETNESS')
+```
+
+###### Map of change
+
+```{r map_change_wetness}
+#MAP OF CHANGE
+```
+
+# Last year's Grimes scores
+
+```{r ellenberg_map}
+int_map_feat_by_hab(df_site, c('STRESS', 'COMPETITION', 'RUDERALS'))
+```
+
+### Stress
+
+###### Average change over the years
+
+```{r av_change_stress}
+plot_feat_by_hab_year('BAP_BROAD', 'STRESS')
+```
+
+###### Map of change
+
+```{r map_change_stress}
+#MAP OF CHANGE
+```
+
+### Competition
+
+###### Average change over the years
+
+```{r av_change_comp}
+plot_feat_by_hab_year('BAP_BROAD', 'COMPETITION')
+```
+
+###### Map of change
+
+```{r map_change_comp}
+#MAP OF CHANGE
+```
+
+### Ruderals
+
+###### Average change over the years
+
+```{r av_change_ruderals}
+plot_feat_by_hab_year('BAP_BROAD', 'RUDERALS')
+```
+
+###### Map of change
+
+```{r map_change_ruderals}
+#MAP OF CHANGE
+```
