@@ -7,9 +7,10 @@ output: html_document
 
 
 ```{r setup, echo=FALSE, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
-setwd('C:/Users/kiera/Work/NE_work')
 source('./data_prep_figure4.R')
+knitr::opts_chunk$set(echo = FALSE)
+opts_chunk$set(fig.width=10, fig.height=7)
+setwd('C:/Users/kiera/Work/NE_work/Report')
 ```
 
 ```{r import, include=FALSE}
@@ -20,22 +21,32 @@ bp_list <- get_names('rename_habitat.csv')[[4]]
 
 #df_all <- read_all_data('all_plots.csv')
 df_all <- read_csv('report_plots.csv')
+site_code <- 'B12'
 
 # Taking the data from just one site
-df_site <- filter(df_all, SITECODE == 'B14') %>%
+df_site <- filter(df_all, SITECODE == site_code) %>%
   fix_names(., name_swap_bap) %>%
 # transform the eastings and northings into latitude and longitude
   transform_coords(.)
 
 # Converts the NVC abbreviations to the full names
-df$NVC_groupc <- name_swap(df$NVC_groupc, name_swap_nvc)
+df_site$NVC_groupc <- name_swap(df_site$NVC_groupc, name_swap_nvc)
+
+df_site$YEAR <- as.character(df_site$YEAR)
+
+# PLOT 30 for Lullington is really weird and should be removed as it ruins the
+# scale
+# df_site <- df_site %>%
+#   filter(PLOT_ID != 30) %>%
+#   filter(PLOT_ID != '30a') %>%
+#   filter(PLOT_ID != '30')
 
 # Making the sub dataframes with only the major habitats selected
 #object[[1]] is the data frame. object[[2]] is the list of habitats
 df_site.bb <- select_by('BAP_BROAD', 20)
 df_site.bp <- select_by('BAP_PRIORITY', 15)
 df_site.nvcb <- select_by('NVC_groupb', 15)
-df_site.nvcc <- select_by('NVC_groupc', 15)
+df_site.nvcc <- select_by('NVC_groupc', 20)
 
 # the centre points of the maps
 east_cent <- get_centre_coords(df_site)[[1]]
@@ -45,7 +56,7 @@ unique_years <- unique(df_site$YEAR)
 unique_habs <- unique(df_site$BAP_BROAD)
 unique_nvchabs <- unique(df_site$NVC_groupc)
 
-total_change <- get_change_by_year(df_site)
+df_change <- get_change_by_year(df_site)
 ```
 
 # Habitats
@@ -85,7 +96,7 @@ plot_feat_by_hab_year('BAP_BROAD', 'Species_richness')
 ###### Map of change
 
 ```{r map_change_spec_rich}
-#MAP OF CHANGE
+change_map_int(df_change, 'Species_richness')
 ```
 
 ### Species diversity
@@ -98,14 +109,70 @@ plot_feat_by_hab_year('BAP_BROAD', 'Species_diversity')
 
 ###### Map of change
 
-```{r map_change_spec_rich}
-#MAP OF CHANGE
+```{r map_change_spec_div}
+change_map_int(df_change, 'Species_diversity')
 ```
 
 
 ### Individual species plot
-```{r individual_species}
-# A PLOT OF INDIVIDUAL SPCESIES
+```{r individual_species, echo=FALSE}
+col_types1 <- cols(
+  .default = col_double(),
+  PLOT_ID = col_character(),
+  SITECODE = col_character(),
+  BAP_BROAD = col_character(),
+  NVC_FIRST = col_character()
+)
+
+col_types2 <- cols(
+  B36 = col_character(),
+  B12 = col_character(),
+  B14 = col_character(),
+  B15 = col_character(),
+  B25 = col_character(),
+  B26 = col_character()
+)
+
+df_pc <- read_csv('all_species_pc.csv', col_types = col_types1)
+indicators <- read_csv('Positive_indicators.csv', col_types = col_types2)
+
+keep_cols <- c('PLOT_ID', 'SITECODE', 'YEAR', 'EASTINGS', 'NORTHINGS', 
+               'BAP_BROAD', 'NVC_FIRST')
+
+df_pc[ , !(colnames(df_pc) %in% keep_cols)][is.na(df_pc[ , !(colnames(df_pc) %in% keep_cols)])] <- 0
+
+spec_list <- indicators[[site_code]]
+spec_list <- spec_list[!is.na(spec_list)]
+
+df <- df_pc[, (colnames(df_pc) %in% c(keep_cols, spec_list))] %>%
+  filter(SITECODE == site_code)
+
+list_of_years <- unique(df$YEAR)
+species_names <- colnames(df)[-(1:length(keep_cols))]
+
+years_av_list = list()
+for (ii in 1:length(list_of_years)) {
+  df_year <- df %>%
+    filter(YEAR == list_of_years[ii])
+  
+  year_av <- summarize_all(df_year[, -(1:length(keep_cols))], mean)
+  year_av$Year <- list_of_years[ii]
+
+  years_av_list[[ii]] <- year_av
+}
+
+
+df_pc_av <- bind_rows(years_av_list)
+
+df2 <- reshape2::melt(df_pc_av ,  id.vars = 'Year', variable.name = 'Species')
+p <- ggplot(df2, aes(Year,value)) + 
+  geom_line(aes(colour = Species)) +
+  geom_point(aes(colour = Species)) +
+  labs(title = 'Changing species populations', y = 'Average percentage cover')
+
+
+plotly::ggplotly(p)
+
 ```
 
 # Last year's vegetation height, bare ground and litter
@@ -125,7 +192,7 @@ plot_feat_by_hab_year('BAP_BROAD', 'MEAN_HEIGHT')
 ###### Map of change
 
 ```{r map_change_veg_height}
-#MAP OF CHANGE
+change_map_int(df_change, 'MEAN_HEIGHT')
 ```
 
 ### Litter
@@ -139,7 +206,7 @@ plot_feat_by_hab_year('BAP_BROAD', 'litter')
 ###### Map of change
 
 ```{r map_change_litter}
-#MAP OF CHANGE
+change_map_int(df_change, 'litter')
 ```
 
 ### Bare ground
@@ -153,7 +220,7 @@ plot_feat_by_hab_year('BAP_BROAD', 'bare x')
 ###### Map of change
 
 ```{r map_change_bare}
-#MAP OF CHANGE
+change_map_int(df_change, 'bare x')
 ```
 
 # Last year's Ellenberg scores
@@ -173,7 +240,7 @@ plot_feat_by_hab_year('BAP_BROAD', 'LIGHT')
 ###### Map of change
 
 ```{r map_change_light}
-#MAP OF CHANGE
+change_map_int(df_change, 'LIGHT')
 ```
 
 ### Fertility
@@ -187,7 +254,7 @@ plot_feat_by_hab_year('BAP_BROAD', 'FERTILITY')
 ###### Map of change
 
 ```{r map_change_fertility}
-#MAP OF CHANGE
+change_map_int(df_change, 'FERTILITY')
 ```
 
 ### pH
@@ -201,7 +268,7 @@ plot_feat_by_hab_year('BAP_BROAD', 'PH')
 ###### Map of change
 
 ```{r map_change_ph}
-#MAP OF CHANGE
+change_map_int(df_change, 'PH')
 ```
 
 ### Wetness
@@ -215,12 +282,12 @@ plot_feat_by_hab_year('BAP_BROAD', 'WETNESS')
 ###### Map of change
 
 ```{r map_change_wetness}
-#MAP OF CHANGE
+change_map_int(df_change, 'WETNESS')
 ```
 
 # Last year's Grimes scores
 
-```{r ellenberg_map}
+```{r grimes_map}
 int_map_feat_by_hab(df_site, c('STRESS', 'COMPETITION', 'RUDERALS'))
 ```
 
@@ -235,7 +302,7 @@ plot_feat_by_hab_year('BAP_BROAD', 'STRESS')
 ###### Map of change
 
 ```{r map_change_stress}
-#MAP OF CHANGE
+change_map_int(df_change, 'STRESS')
 ```
 
 ### Competition
@@ -249,7 +316,7 @@ plot_feat_by_hab_year('BAP_BROAD', 'COMPETITION')
 ###### Map of change
 
 ```{r map_change_comp}
-#MAP OF CHANGE
+change_map_int(df_change, 'COMPETITION')
 ```
 
 ### Ruderals
@@ -263,5 +330,6 @@ plot_feat_by_hab_year('BAP_BROAD', 'RUDERALS')
 ###### Map of change
 
 ```{r map_change_ruderals}
-#MAP OF CHANGE
+change_map_int(df_change, 'RUDERALS')
 ```
+

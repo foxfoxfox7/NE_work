@@ -7,6 +7,8 @@ library(rgdal)
 library(plyr)
 library(mapview)
 library(janitor)
+library(knitr)
+library(reshape)
 
 ################################################################################
 # My functions
@@ -21,7 +23,7 @@ read_all_data <- function(file_name2) {
   
   # Removing all the rows that have no real information
   # These are usually because the plot wasn't surveyed
-  blank_check <- c('Species_richness', 'bare.x', 'NVC_FIRST', 'MEAN_HEIGHT')
+  blank_check <- c('Species_richness', 'bare x', 'NVC_FIRST', 'MEAN_HEIGHT')
   blank_len <- length(blank_check)
   df <- df[rowSums(is.na(df[blank_check]))!=blank_len,]
   
@@ -162,7 +164,7 @@ get_change_by_year <- function(df) {
   # these columns wil be compared between years
   change_cols <- c('Species_richness', 'Species_diversity', 'LIGHT', 'WETNESS',
                    'PH', 'FERTILITY', 'COMPETITION', 'STRESS', 'RUDERALS',
-                   'MEAN_HEIGHT', 'litter', 'bare.x')
+                   'MEAN_HEIGHT', 'litter', 'bare x')
   
   df_year_list = list()
   for (ii in 1:length(unique_years)) {
@@ -170,7 +172,7 @@ get_change_by_year <- function(df) {
       filter(YEAR == unique_years[ii]) %>%
       select(all_of(track_cols), all_of(change_cols))
 
-    # Adding the year to the column so we can put different years in the same year
+    # Adding the year to the column so we can put different years in the same row
     year_marker <- unique_years[ii]
     colnames(df_year)[-1] <- paste(colnames(df_year)[-1], year_marker, sep = '_')
     df_year$PLOT_ID <- gsub('a$', '', df_year$PLOT_ID)
@@ -184,19 +186,22 @@ get_change_by_year <- function(df) {
     df_change <- full_join(df_change, df_year_list[[ii+1]], by = 'PLOT_ID')
   }
   
-  
   year_change_list = list()
   for (ii in 1:(length(unique_years)-1)) {
     
     east_col <- paste('coords.easting', unique_years[ii+1], sep='_')
     north_col <- paste('coords.northing', unique_years[ii+1], sep='_')
+    bap_col <- paste('BAP_BROAD', unique_years[ii+1], sep='_')
+    nvc_col <- paste('NVC_groupc', unique_years[ii+1], sep='_')
     
     # building the basic blocks of the change df
     yearly_change <- tibble(
       df_change[ , 'PLOT_ID'],
       YEAR = unique_years[ii+1],
       df_change[ ,east_col],
-      df_change[ , north_col]
+      df_change[ , north_col],
+      df_change[ ,bap_col],
+      df_change[ ,nvc_col]
     )
     
     # removing the year from the end of the coordinates colums so they join
@@ -204,6 +209,10 @@ get_change_by_year <- function(df) {
       gsub('.{5}$', '', names(yearly_change)[names(yearly_change) == east_col])
     names(yearly_change)[names(yearly_change) == north_col] <-
       gsub('.{5}$', '', names(yearly_change)[names(yearly_change) == north_col])
+    names(yearly_change)[names(yearly_change) == bap_col] <-
+      gsub('.{5}$', '', names(yearly_change)[names(yearly_change) == bap_col])
+    names(yearly_change)[names(yearly_change) == nvc_col] <-
+      gsub('.{5}$', '', names(yearly_change)[names(yearly_change) == nvc_col])
     
     for (jj in 1:length(change_cols)) {
       # choosing the feature to look at the difference
@@ -224,6 +233,8 @@ get_change_by_year <- function(df) {
       yearly_change[ ,feature_col_name_norm] <-
         (df_change[ ,col_to] - df_change[ ,col_from]) /
         ((df_change[ ,col_to] + df_change[ ,col_from]) /2 ) # the average (norm)
+      yearly_change[ ,feature_col_name_norm] <- 
+        yearly_change[ ,feature_col_name_norm] * 100
     }
     
     year_change_list[[ii]] <- yearly_change
@@ -252,14 +263,15 @@ plot_feat_by_hab_year <- function(habitat, feature) {
     print('Habitat grouping not recognised')
   }
   
-  ylim1 = boxplot.stats(df[[feature]])$stats[c(1, 5)]
+  #ylim1 = boxplot.stats(df[[feature]])$stats[c(1, 5)]
   
   # PLotting according to year (next to each other showing change)
   pp <- ggplot(df, aes(y=.data[[feature]], x=YEAR)) +
     geom_boxplot() + 
-    coord_cartesian(ylim = ylim1*1.05) + 
+    #coord_cartesian(ylim = ylim1*1.05) + 
     facet_wrap(.data[[habitat]] ~ .)
-  print(pp)
+  #print(pp)
+  pp
 }
 
 # Showing the proportion of each NVC group in each bap habitat
@@ -425,12 +437,13 @@ map_hab_by_year <- function(df, habitat) {
     addCircleMarkers(lng = ~coords.easting, lat = ~coords.northing,
                      color = factpal_site(df[[habitat]]),
                      group = ~YEAR,
+                     label = ~NVC_groupb,
                      stroke = FALSE, fillOpacity = 0.8) %>%
     addLegend(pal = factpal_site, 
               values = df[[habitat]], 
               opacity = 1,
               title = habitat,
-              position = 'bottomleft',) %>%
+              position = 'bottomleft') %>%
     addLayersControl(baseGroups = list_of_years,
                      options = layersControlOptions(collapsed = F))
   
@@ -552,35 +565,33 @@ int_map_feat_by_hab <- function(df, features) {
   
   ################
   
-  features <- c('MEAN_HEIGHT', 'litter', 'bare.x')
-  print(names(df))
   centre_coords <- get_centre_coords(df)
   east_cent <- centre_coords[[1]]
   north_cent <- centre_coords[[2]]
   
   list_of_years <- unique(df$YEAR)
   list_of_habs <- unique(df$BAP_BROAD)
-  print(list_of_habs)
+  #print(list_of_habs)
   
   df <- df %>%
     filter(YEAR == list_of_years[length(list_of_years)])
   
   #################
   
-  m <- leaflet(df) %>%
+  ma <- leaflet(df) %>%
     addTiles() %>%
     setView(lng=east_cent, lat=north_cent, zoom = 14)
   
   for (jj in 1:length(features)) {
     
-    #df_feat <- subset(df, !is.na(df[,features[jj]]))
+    df_feat <- subset(df, !is.na(df[,features[jj]]))
     
     #domain <- quantile(df_feat[[features[jj]]], probs = seq(0, 1, 1/40))[c(2,40)]
     domain <- range(df_feat[[features[jj]]])
     pal <- colorNumeric(palette = "Purples", domain = domain)
     
-    m <- addCircleMarkers(
-      map = m,
+    ma <- addCircleMarkers(
+      map = ma,
       lat=~coords.northing, 
       lng=~coords.easting,
       #color = ~factpal_site(BAP_BROAD),
@@ -589,12 +600,12 @@ int_map_feat_by_hab <- function(df, features) {
       stroke = FALSE, fillOpacity = 1,
       group=~BAP_BROAD, 
       label=df_feat[[features[jj]]], 
-      layerId = ~paste(unique_id2, features[jj], sep="")) %>%
-      addLegend(pal = pal,
-                values = df[[features[jj]]],
-                title = features[jj],
-                position = 'bottomleft',
-                group = features[jj])
+      layerId = ~paste(unique_id2, features[jj], sep=""))# %>%
+      # addLegend(pal = pal,
+      #           values = df_feat[[features[jj]]],
+      #           title = features[jj],
+      #           position = 'bottomleft',
+      #           group = features[jj])
     
   }
   
@@ -640,27 +651,27 @@ int_map_feat_by_hab <- function(df, features) {
         })
     }", features[1], features[1])
   
-  m <- addLayersControl(map = m,
+  ma <- addLayersControl(map = ma,
                         baseGroups = features,
                         overlayGroups = list_of_habs,
                         options = layersControlOptions(collapsed = F)) %>%
     htmlwidgets::onRender(
       widget_text
-    ) %>%
-    htmlwidgets::onRender("
-    function(el, x) {
-      var updateLegend = function () {
-          var selectedGroup = document.querySelectorAll('input:checked')[0].nextSibling.innerText.substr(1);
-
-          document.querySelectorAll('.legend').forEach(a => a.hidden=true);
-          document.querySelectorAll('.legend').forEach(l => {
-            if (l.children[0].children[0].innerText == selectedGroup) l.hidden=false;
-          });
-      };
-      updateLegend();
-      this.on('baselayerchange', e => updateLegend());
-    }")
-  m
+    )# %>%
+    # htmlwidgets::onRender("
+    # function(el, x) {
+    #   var updateLegend = function () {
+    #       var selectedGroup = document.querySelectorAll('input:checked')[0].nextSibling.innerText.substr(1);
+    # 
+    #       document.querySelectorAll('.legend').forEach(a => a.hidden=true);
+    #       document.querySelectorAll('.legend').forEach(l => {
+    #         if (l.children[0].children[0].innerText == selectedGroup) l.hidden=false;
+    #       });
+    #   };
+    #   updateLegend();
+    #   this.on('baselayerchange', e => updateLegend());
+    # }")
+  ma
 }
 
 map_habitats <- function(df) {
@@ -674,7 +685,6 @@ map_habitats <- function(df) {
   
   ################
   
-  print(names(df))
   centre_coords <- get_centre_coords(df)
   east_cent <- centre_coords[[1]]
   north_cent <- centre_coords[[2]]
@@ -766,4 +776,109 @@ map_habitats <- function(df) {
   m
 }
 
+change_map_int <- function(df, feat, norm = TRUE) {
+  
+  feature <- paste(feat, 'diff', sep='_')
+  feature2 <- paste(feat, 'diff', sep='_')
+  
+  if (norm == TRUE) {
+    feature <- paste(feature, 'norm', sep='_')
+  }
+  
+  df <- df[!is.na(df[ ,feature]),]
+  
+  centre_coords <- get_centre_coords(df)
+  east_cent <- centre_coords[[1]]
+  north_cent <- centre_coords[[2]]
+  
+  df$unique_id2 <- as.character(1:length(df$PLOT_ID)) %>%
+    str_pad(., width = 25, side = 'right', pad = 'z')
+  
+  
+  # getting the range of the data to make a colour gradient
+  pf_max <- max(abs(na.omit(df[feature][[feature]])))
+  pf_domain <- c(-pf_max, pf_max)
+  # the creation of the colour gradient function
+  pf_pal <- colorNumeric(palette = c('red', 'white', 'blue'), domain = pf_domain)
+  
+  m <- leaflet() %>%
+    addTiles() %>%
+    setView(lng=east_cent, lat=north_cent, zoom = 14) %>%
+    addLegend(pal = pf_pal,
+              values = df[[feature]],
+              title = 'Percentage change',
+              position = 'bottomleft')
+  
+  for (jj in 1:(length(unique_years)-1)) {
+    
+    df_year <- df %>%
+      filter(YEAR == unique_years[jj+1])
+    
+    labs <- lapply(seq(nrow(df_year)), function(i) {
+      paste0( '<p>Habitat: ', df_year[i, "BAP_BROAD"], '</p><p>Actual change: ', 
+              as.character(df_year[i, feature2]))
+    })
+    
+    m <- addCircleMarkers(
+      map = m,
+      lat = df_year$coords.northing, 
+      lng = df_year$coords.easting, 
+      color = pf_pal(df_year[[feature]]),
+      stroke = FALSE, fillOpacity = 1,
+      group = df_year$BAP_BROAD, 
+      #label = sprintf('Change: %s Habitat: %s', df_year[[feature2]], df_year$BAP_BROAD),#df_year[[feature2]], 
+      label = lapply(labs, htmltools::HTML),
+      layerId = paste(df_year$unique_id2, unique_years[jj+1], sep=""))
+  }
+  
+  widget_text <- sprintf("
+    function(el, x) {
+      var myMap = this;
+      var baseLayer = '%s';
+      myMap.eachLayer(function(layer){
+        var id = layer.options.layerId;
+        if (id){
+          if ('%s' !== id.substring(25,)){
+            layer.getElement().style.display = 'none';
+          }
+        }
+      })
+      console.log(myMap.baselayer);
+      myMap.on('baselayerchange',
+        function (e) {
+          baseLayer=e.name;
+          myMap.eachLayer(function (layer) {
+              var id = layer.options.layerId;
+              if (id){
+                if (e.name !== id.substring(25,)){
+                  layer.getElement().style.display = 'none';
+                  layer.closePopup();
+                }
+                if (e.name === id.substring(25,)){
+                  layer.getElement().style.display = 'block';
+                }
+              }
 
+          });
+        })
+        myMap.on('overlayadd', function(e){
+          myMap.eachLayer(function(layer){
+            var id = layer.options.layerId;
+            if (id){
+                if (baseLayer !== id.substring(25,)){
+                  layer.getElement().style.display = 'none';
+                }
+            }
+          })
+        })
+    }", unique_years[2], unique_years[2])
+  
+  m <- addLayersControl(map = m,
+                        baseGroups = unique_years[-1],
+                        overlayGroups = unique_habs,
+                        options = layersControlOptions(collapsed = F)) %>%
+    htmlwidgets::onRender(
+      widget_text
+    )
+  m
+}
