@@ -40,6 +40,143 @@ total_change <- get_change_by_year(df)
 
 ################################################################################
 
+int_map_feat_by_hab(df, c('STRESS', 'COMPETITION', 'RUDERALS'))
+
+features <- c('STRESS', 'COMPETITION', 'RUDERALS')
+df$BAP_BROAD[is.na(df$BAP_BROAD)] <- 'NA'
+
+df$unique_id2 <- as.character(1:length(df$PLOT_ID)) %>%
+  str_pad(., width = 25, side = 'right', pad = 'z')
+
+################
+
+centre_coords <- get_centre_coords(df)
+east_cent <- centre_coords[[1]]
+north_cent <- centre_coords[[2]]
+
+list_of_years <- unique(df$YEAR)
+list_of_habs <- unique(df$BAP_BROAD)
+#print(list_of_habs)
+
+df <- df %>%
+  filter(YEAR == list_of_years[length(list_of_years)])
+
+#################
+
+ma <- leaflet(df) %>%
+  addTiles() %>%
+  setView(lng=east_cent, lat=north_cent, zoom = 14)
+
+for (jj in 1:length(features)) {
+  
+  df_feat <- subset(df, !is.na(df[,features[jj]]))
+  
+  #domain <- quantile(df_feat[[features[jj]]], probs = seq(0, 1, 1/40))[c(2,40)]
+  domain <- range(df_feat[[features[jj]]])
+  pal <- colorNumeric(palette = "Purples", domain = domain)
+  
+  ma <- addCircleMarkers(
+    map = ma,
+    lat=~coords.northing, 
+    lng=~coords.easting,
+    #color = ~factpal_site(BAP_BROAD),
+    color = pal(df_feat[[features[jj]]]),
+    #radius = ~((df_feat[[features[jj]]] / max(df_feat[[features[jj]]])) * 10),
+    stroke = FALSE, fillOpacity = 1,
+    group=~BAP_BROAD, 
+    label=df_feat[[features[jj]]], 
+    layerId = ~paste(unique_id2, features[jj], sep=""))# %>%
+  # addLegend(pal = pal,
+  #           values = df_feat[[features[jj]]],
+  #           title = features[jj],
+  #           position = 'bottomleft',
+  #           group = features[jj])
+  
+}
+
+widget_text <- sprintf("
+    function(el, x) {
+      var myMap = this;
+      var baseLayer = '%s';
+      myMap.eachLayer(function(layer){
+        var id = layer.options.layerId;
+        if (id){
+          if ('%s' !== id.substring(25,)){
+            layer.getElement().style.display = 'none';
+          }
+        }
+      })
+      console.log(myMap.baselayer);
+      myMap.on('baselayerchange',
+        function (e) {
+          baseLayer=e.name;
+          myMap.eachLayer(function (layer) {
+              var id = layer.options.layerId;
+              if (id){
+                if (e.name !== id.substring(25,)){
+                  layer.getElement().style.display = 'none';
+                  layer.closePopup();
+                }
+                if (e.name === id.substring(25,)){
+                  layer.getElement().style.display = 'block';
+                }
+              }
+
+          });
+        })
+        myMap.on('overlayadd', function(e){
+          myMap.eachLayer(function(layer){
+            var id = layer.options.layerId;
+            if (id){
+                if (baseLayer !== id.substring(25,)){
+                  layer.getElement().style.display = 'none';
+                }
+            }
+          })
+        })
+    }", features[1], features[1])
+
+ma <- addLayersControl(map = ma,
+                       baseGroups = features,
+                       overlayGroups = list_of_habs,
+                       options = layersControlOptions(collapsed = F)) %>%
+  htmlwidgets::onRender(
+    widget_text
+  )# %>%
+# htmlwidgets::onRender("
+# function(el, x) {
+#   var updateLegend = function () {
+#       var selectedGroup = document.querySelectorAll('input:checked')[0].nextSibling.innerText.substr(1);
+# 
+#       document.querySelectorAll('.legend').forEach(a => a.hidden=true);
+#       document.querySelectorAll('.legend').forEach(l => {
+#         if (l.children[0].children[0].innerText == selectedGroup) l.hidden=false;
+#       });
+#   };
+#   updateLegend();
+#   this.on('baselayerchange', e => updateLegend());
+# }")
+ma
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+################################################################################
 df_pc <- read_csv('all_species_pc.csv')
 indicators <- read_csv('Positive_indicators.csv')
 

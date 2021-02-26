@@ -5,7 +5,6 @@ date: "22/02/2021"
 output: html_document
 ---
 
-
 ```{r setup, echo=FALSE, include=FALSE}
 source('./data_prep_figure4.R')
 knitr::opts_chunk$set(echo = FALSE)
@@ -26,13 +25,13 @@ site_code <- 'B12'
 # Taking the data from just one site
 df_site <- filter(df_all, SITECODE == site_code) %>%
   fix_names(., name_swap_bap) %>%
-# transform the eastings and northings into latitude and longitude
+  # transform the eastings and northings into latitude and longitude
   transform_coords(.)
 
 # Converts the NVC abbreviations to the full names
 df_site$NVC_groupc <- name_swap(df_site$NVC_groupc, name_swap_nvc)
-
 df_site$YEAR <- as.character(df_site$YEAR)
+df_site$Species_diversity <- round(df_site$Species_diversity, 2)
 
 # PLOT 30 for Lullington is really weird and should be removed as it ruins the
 # scale
@@ -61,19 +60,25 @@ df_change <- get_change_by_year(df_site)
 
 # Habitats
 
-### BAP broad habitats on the site
+The sites of the LTMN project are categorised using the Biodiversity Action Plan (BAP) broad habitats. Individual plots are recorded as one of the broad habitats when data is collected, and where this categorisation is missing, it is filled using the other available data (such as NVC habitat classification). The broad habitat often represents how the area was when the site was chosen while undergoing transitions.
+
+## BAP broad habitats on the site
 
 ```{r Bap_habitat}
 map_hab_by_year(df_site, 'BAP_BROAD')
 ```
 
-### NVC habitats by BAP broad categorisation
+## NVC habitats by BAP broad categorisation
+
+After the species data has been collected for each plot, it is processed using MAVIS software which uses the plants and plant abundance to categorise the plots into their NVC habitat classifications. It should be noted that accurate categorisation is often difficult due to sites having a mix of habitats and transitions between them. For this reason the categorisation is given a confidence percentage which is shown when hovering the mouse over the data points on the map below.
 
 ```{r NVC_habitats}
 map_habitats(df_site)
 ```
 
-### NVC habitat sub groups
+## NVC habitat sub groups
+
+Within each larger NVC community, there are many sub-communities which differ based on plant populations. For each major NVC group, the sub-community split is displayed below over the years.
 
 ```{r NVC_subgroups}
 habitat_by_habitat('NVC_groupc', 'NVC_groupb')
@@ -81,98 +86,57 @@ habitat_by_habitat('NVC_groupc', 'NVC_groupb')
 
 # Last year's species richness and diversity
 
+Species richness (the number of different species found in each plot) and species diversity (a measure of how even the species populations within a plot are) are recorded and mapped onto the site. A darker shade of blue indicates a higher richness/diversity.
+
 ```{r div_rich_map}
 int_map_feat_by_hab(df_site, c('Species_richness', 'Species_diversity'))
 ```
 
-### Species richness
+## Species richness
 
-###### Average change over the years
+#### Average change over the years
 
 ```{r av_change_spec_rich}
 plot_feat_by_hab_year('BAP_BROAD', 'Species_richness')
 ```
 
-###### Map of change
+The distribution of the plot species numbers across the major BAP broad habitats. The centre line of the box is the median value across all plots designated as that habitat. The edges of the box are the interquartile range (the range, omitting the smallest and largest quarters of the values).
+
+#### Map of change
+
+Map showing where changes are located. Each year shows the change from the last survey across each plot, with purple markers indicating a reduction and yellow markers indicating an increase.
+
+The change in each plot has been normalised by dividing the change in species richness by the total plot species richness to give a percentage change.
 
 ```{r map_change_spec_rich}
-change_map_int(df_change, 'Species_richness')
+change_map_int(df_change, 'Species_richness', norm=TRUE, leg_title='Percentage change')
 ```
 
-### Species diversity
+## Species diversity
 
-###### Average change over the years
+A community dominated by a small portion of the species is considered to be less diverse than one in which more of the species present have a similar abundance. The Simpson diversity index takes this into account as well as total species present.
+
+Values of diversity range from 0 to 1 with 0 meaning a total lack of biodiversity (monoculture) and 1 meaning a completely even spread of species.
+
+#### Average change over the years
 
 ```{r av_change_spec_div}
 plot_feat_by_hab_year('BAP_BROAD', 'Species_diversity')
 ```
 
-###### Map of change
+The distribution of the plot diversity scores across the major BAP broad habitats. The centre line of the box is the median value across all plots designated as that habitat. The edges of the box are the interquartile range (the range, omitting the smallest and largest quarters of the values).
+
+#### Map of change
 
 ```{r map_change_spec_div}
 change_map_int(df_change, 'Species_diversity')
 ```
 
+Map showing where changes are located. Each year shows the change from the last survey across each plot, with purple markers indicating a reduction and yellow markers indicating an increase. 
 
-### Individual species plot
+## Individual species plot
 ```{r individual_species, echo=FALSE}
-col_types1 <- cols(
-  .default = col_double(),
-  PLOT_ID = col_character(),
-  SITECODE = col_character(),
-  BAP_BROAD = col_character(),
-  NVC_FIRST = col_character()
-)
-
-col_types2 <- cols(
-  B36 = col_character(),
-  B12 = col_character(),
-  B14 = col_character(),
-  B15 = col_character(),
-  B25 = col_character(),
-  B26 = col_character()
-)
-
-df_pc <- read_csv('all_species_pc.csv', col_types = col_types1)
-indicators <- read_csv('Positive_indicators.csv', col_types = col_types2)
-
-keep_cols <- c('PLOT_ID', 'SITECODE', 'YEAR', 'EASTINGS', 'NORTHINGS', 
-               'BAP_BROAD', 'NVC_FIRST')
-
-df_pc[ , !(colnames(df_pc) %in% keep_cols)][is.na(df_pc[ , !(colnames(df_pc) %in% keep_cols)])] <- 0
-
-spec_list <- indicators[[site_code]]
-spec_list <- spec_list[!is.na(spec_list)]
-
-df <- df_pc[, (colnames(df_pc) %in% c(keep_cols, spec_list))] %>%
-  filter(SITECODE == site_code)
-
-list_of_years <- unique(df$YEAR)
-species_names <- colnames(df)[-(1:length(keep_cols))]
-
-years_av_list = list()
-for (ii in 1:length(list_of_years)) {
-  df_year <- df %>%
-    filter(YEAR == list_of_years[ii])
-  
-  year_av <- summarize_all(df_year[, -(1:length(keep_cols))], mean)
-  year_av$Year <- list_of_years[ii]
-
-  years_av_list[[ii]] <- year_av
-}
-
-
-df_pc_av <- bind_rows(years_av_list)
-
-df2 <- reshape2::melt(df_pc_av ,  id.vars = 'Year', variable.name = 'Species')
-p <- ggplot(df2, aes(Year,value)) + 
-  geom_line(aes(colour = Species)) +
-  geom_point(aes(colour = Species)) +
-  labs(title = 'Changing species populations', y = 'Average percentage cover')
-
-
-plotly::ggplotly(p)
-
+plot_ind_species('all_species_pc.csv', 'Positive_indicators.csv', site_code)
 ```
 
 # Last year's vegetation height, bare ground and litter
@@ -181,155 +145,228 @@ plotly::ggplotly(p)
 int_map_feat_by_hab(df_site, c('MEAN_HEIGHT', 'litter', 'bare x'))
 ```
 
-### Vegetation height
+Metrics are used to detemine the amount of litter and bare ground in a quadrat and the mean height of the plants across the whole quadrat. This map shows a darker shade of blue for more litter/bare ground and higher plant height.
 
-###### Average change over the years
+## Vegetation height
+
+The vegetation height in a plot is measured by placing a disk ontop of the sward and letting it fall until it is supported by the vegetation. This is done in each division of the larger quadrat and the height is recorded. The average of these is then taken for each plot.
+
+#### Average change over the years
 
 ```{r av_change_veg_height}
 plot_feat_by_hab_year('BAP_BROAD', 'MEAN_HEIGHT')
 ```
 
-###### Map of change
+The distribution of the plot vegetation height averages across the major BAP broad habitats. The centre line of the box is the median value across all plots designated as that habitat. The edges of the box are the interquartile range (the range, omitting the smallest and largest quarters of the values).
+
+#### Map of change
 
 ```{r map_change_veg_height}
 change_map_int(df_change, 'MEAN_HEIGHT')
 ```
 
-### Litter
+Map showing where changes are located. Each year shows the change from the last survey across each plot, with purple markers indicating a reduction and yellow markers indicating an increase. 
 
-###### Average change over the years
+## Litter
+
+Presence of litter is recorded in each of the 25 subdivisions of the larger quadrat and each plot is then given a recording of 0-25 for presence of litter.
+
+#### Average change over the years
 
 ```{r av_change_litter}
 plot_feat_by_hab_year('BAP_BROAD', 'litter')
 ```
 
-###### Map of change
+The distribution of the litter presence scores across the major BAP broad habitats. The centre line of the box is the median value across all plots designated as that habitat. The edges of the box are the interquartile range (the range, omitting the smallest and largest quarters of the values).
+
+#### Map of change
 
 ```{r map_change_litter}
 change_map_int(df_change, 'litter')
 ```
 
-### Bare ground
+Map showing where changes are located. Each year shows the change from the last survey across each plot, with purple markers indicating a reduction and yellow markers indicating an increase. 
 
-###### Average change over the years
+## Bare ground
+
+Presence of bare ground is recorded in each of the 25 subdivisions of the larger quadrat and each plot is then given a recording of 0-25 for presence of litter. 
+
+#### Average change over the years
 
 ```{r av_change_bare}
 plot_feat_by_hab_year('BAP_BROAD', 'bare x')
 ```
 
-###### Map of change
+The distribution of the bare ground presence scores across the major BAP broad habitats. The centre line of the box is the median value across all plots designated as that habitat. The edges of the box are the interquartile range (the range, omitting the smallest and largest quarters of the values).
+
+#### Map of change
 
 ```{r map_change_bare}
 change_map_int(df_change, 'bare x')
 ```
 
+Map showing where changes are located. Each year shows the change from the last survey across each plot, with purple markers indicating a reduction and yellow markers indicating an increase. 
+
 # Last year's Ellenberg scores
+
+These are scores of 'light', 'fertility', 'pH', and 'wetness' for each plot, given by the plant species found. They are not a direct measurement of the feature but instead, plants are given a score for each, depending on how they like the particular feature. The plants in the plot are then averaged to give a plant favourability score for each plot. A high wetness score means the plants in that plot favour a wet environment and a low fertility score means the plants favour an infertile soil.
 
 ```{r ellenberg_map}
 int_map_feat_by_hab(df_site, c('LIGHT', 'FERTILITY', 'PH', 'WETNESS'))
 ```
 
-### Light
+This map shows a darker shade of blue for higher Ellenberg scores.
 
-###### Average change over the years
+The pH scores here are not 'pH' but a value of alkaline favourability of the plants found on the plot. They have no units and do not scale in the same way that pH scales (with 7 as neutral). Large scores mean that the plants on the plot prefer alkaline soils.
+
+## Light
+
+The light Ellenberg score gives an indication of how the plants on a plot favour light. A score of 1 indicates the plant prefers deep shade at all times, a score of 5 indicates semi shade and a score of 9 indicates the plant favours full light.
+
+#### Average change over the years
 
 ```{r av_change_light}
 plot_feat_by_hab_year('BAP_BROAD', 'LIGHT')
 ```
 
-###### Map of change
+The distribution of the 'light' values across the major BAP broad habitats. The centre line of the box is the median value across all plots designated as that habitat. The edges of the box are the interquartile range (the range, omitting the smallest and largest quarters of the values). Plants are scored on a scale of 1-9 and this average is shown on the y-axis.
+
+#### Map of change
 
 ```{r map_change_light}
 change_map_int(df_change, 'LIGHT')
 ```
 
-### Fertility
+Map showing where changes are located. Each year shows the change from the last survey across each plot, with purple markers indicating a reduction and yellow markers indicating an increase. 
 
-###### Average change over the years
+## Fertility
+
+The fertility Ellenberg score gives an indication of how the plants on a plot favour nitrogen in the soil. A score of 1 indicates the plant prefers minimal levels of nitrogen, a score of 5 indicates an average favourability and a score of 9 indicates the plant favours excessive supply.
+
+The fertility score is how much nitrogen the plan
+
+#### Average change over the years
 
 ```{r av_change_fertility}
 plot_feat_by_hab_year('BAP_BROAD', 'FERTILITY')
 ```
 
-###### Map of change
+The distribution of the 'fertility' values across the major BAP broad habitats. The centre line of the box is the median value across all plots designated as that habitat. The edges of the box are the interquartile range (the range, omitting the smallest and largest quarters of the values). Plants are scored on a scale of 1-9 and this average is shown on the y-axis.
+
+#### Map of change
 
 ```{r map_change_fertility}
 change_map_int(df_change, 'FERTILITY')
 ```
 
-### pH
+Map showing where changes are located. Each year shows the change from the last survey across each plot, with purple markers indicating a reduction and yellow markers indicating an increase. 
 
-###### Average change over the years
+## pH
+
+The pH Ellenberg score gives an indication of how the plants on a plot favour alkalinity in the soil. A score of 1 indicates the plant prefers extremely acidic soils, a score of 5 means mildly acidic conditions are preferred, and a score of 9 indicates the plant favours alkaline soils.
+
+#### Average change over the years
 
 ```{r av_change_ph}
 plot_feat_by_hab_year('BAP_BROAD', 'PH')
 ```
 
-###### Map of change
+The distribution of the 'pH' values across the major BAP broad habitats. The centre line of the box is the median value across all plots designated as that habitat. The edges of the box are the interquartile range (the range, omitting the smallest and largest quarters of the values). Plants are scored on a scale of 1-9 and this average is shown on the y-axis.
+
+#### Map of change
 
 ```{r map_change_ph}
 change_map_int(df_change, 'PH')
 ```
 
-### Wetness
+Map showing where changes are located. Each year shows the change from the last survey across each plot, with purple markers indicating a reduction and yellow markers indicating an increase. 
 
-###### Average change over the years
+## Wetness
+
+The wetness Ellenberg score gives an indication of how the plants in the plot prefer the wetness of the soil. A score of 1 indicates dry soil is preferred, 5 would indicate the plants favour a moist soil, 9 suggest wet soil is preferred and a score of 10-12 indicates the plant favours underwater conditions.
+
+#### Average change over the years
 
 ```{r av_change_wetness}
 plot_feat_by_hab_year('BAP_BROAD', 'WETNESS')
 ```
 
-###### Map of change
+The distribution of the 'wetness' values across the major BAP broad habitats. The centre line of the box is the median value across all plots designated as that habitat. The edges of the box are the interquartile range (the range, omitting the smallest and largest quarters of the values). Plants are scored on a scale of 1-12 and this average is shown on the y-axis.
+
+#### Map of change
 
 ```{r map_change_wetness}
 change_map_int(df_change, 'WETNESS')
 ```
 
+Map showing where changes are located. Each year shows the change from the last survey across each plot, with purple markers indicating a reduction and yellow markers indicating an increase. 
+
 # Last year's Grimes scores
+
+Universal adaptive strategy theory (UAST) is a method of categorising plants according to their survival strategy. There are three main ways in which a plant can specialise in order to take advantage of its environment. The first is by taking advantage of available of resources and maximising acquisition at the expense of competitors. Plants are given a 'competition' score to represent the extent to which they use this strategy. The second is by being able to deal with a small amount of resources while other species are not able to maintain in such a stressful environment. Plants are given a 'stress' score to represent the extent to which they use this strategy. The third and final strategy is with rapid completion of the life-cycle which can be advantageous in environments where events are frequently lethal to the plant. Plants are given a 'ruderals' score to represent the extent to which they use this strategy.
 
 ```{r grimes_map}
 int_map_feat_by_hab(df_site, c('STRESS', 'COMPETITION', 'RUDERALS'))
 ```
 
-### Stress
+Individual plots have been taken and the average 'stress', 'competition' and 'ruderals' scores are calculated. This map shows a darker shade of blue for higher Grimes scores. 
 
-###### Average change over the years
+## Competition
 
-```{r av_change_stress}
-plot_feat_by_hab_year('BAP_BROAD', 'STRESS')
-```
+Plants with a high competition score thrive in environments with low disturbance and low intensity stress. They are able to outcompete other plants for the most valuable resources through rapid growth, physical spread and a high capacity for phenotype plasticity (enabling them to adapt to seasons and changing availablity of resources).
 
-###### Map of change
-
-```{r map_change_stress}
-change_map_int(df_change, 'STRESS')
-```
-
-### Competition
-
-###### Average change over the years
+#### Average change over the years
 
 ```{r av_change_comp}
 plot_feat_by_hab_year('BAP_BROAD', 'COMPETITION')
 ```
 
-###### Map of change
+The distribution of the 'competition' values across the major BAP broad habitats. The centre line of the box is the median value across all plots designated as that habitat. The edges of the box are the interquartile range (the range, omitting the smallest and largest quarters of the values). Plants are scored on a scale of 1-10 and this average is shown on the y-axis.
+
+#### Map of change
 
 ```{r map_change_comp}
 change_map_int(df_change, 'COMPETITION')
 ```
 
-### Ruderals
+Map showing where changes are located. Each year shows the change from the last survey across each plot, with purple markers indicating a reduction and yellow markers indicating an increase. 
 
-###### Average change over the years
+## Stress
+
+Plants with a high stress score have adapted to live in highly stressful environments such as alpine or arid habitats, deep shade, nutrient poor soils or areas with extreme pH levels. They are slow growing plants with high nutrient retention and do not do well with lots of disturbance.
+
+#### Average change over the years
+
+```{r av_change_stress}
+plot_feat_by_hab_year('BAP_BROAD', 'STRESS')
+```
+
+The distribution of the 'stress' values across the major BAP broad habitats. The centre line of the box is the median value across all plots designated as that habitat. The edges of the box are the interquartile range (the range, omitting the smallest and largest quarters of the values). Plants are scored on a scale of 1-10 and this average is shown on the y-axis.
+
+#### Map of change
+
+```{r map_change_stress}
+change_map_int(df_change, 'STRESS')
+```
+
+Map showing where changes are located. Each year shows the change from the last survey across each plot, with purple markers indicating a reduction and yellow markers indicating an increase. 
+
+## Ruderals
+
+Ruderals thrive in low stress environments but with lots of disturbance. They will quickly complete their lifecycle and often release are large amount of seed. Plants that have adapted to this strategy are often found in recently disturbed land and are often annuals.
+
+#### Average change over the years
 
 ```{r av_change_ruderals}
 plot_feat_by_hab_year('BAP_BROAD', 'RUDERALS')
 ```
 
-###### Map of change
+The distribution of the 'ruderals' values across the major BAP broad habitats. The centre line of the box is the median value across all plots designated as that habitat. The edges of the box are the interquartile range (the range, omitting the smallest and largest quarters of the values). Plants are scored on a scale of 1-10 and this average is shown on the y-axis.
+
+#### Map of change
 
 ```{r map_change_ruderals}
 change_map_int(df_change, 'RUDERALS')
 ```
 
+Map showing where changes are located. Each year shows the change from the last survey across each plot, with purple markers indicating a reduction and yellow markers indicating an increase. 

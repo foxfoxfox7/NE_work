@@ -9,6 +9,7 @@ library(mapview)
 library(janitor)
 library(knitr)
 library(reshape)
+library(colorspace)
 
 ################################################################################
 # My functions
@@ -314,6 +315,74 @@ habitat_by_habitat <- function(group, count){
 #   geom_boxplot()
 # print(qq)
 
+plot_ind_species <- function(plot_file, ind_file, site) {
+  # these are two parameters to pass to the read_csv to stop it fro throwing
+  # a warning
+  col_types1 <- cols(
+    .default = col_double(),
+    PLOT_ID = col_character(),
+    SITECODE = col_character(),
+    BAP_BROAD = col_character(),
+    NVC_FIRST = col_character()
+  )
+  
+  col_types2 <- cols(
+    B36 = col_character(),
+    B12 = col_character(),
+    B14 = col_character(),
+    B15 = col_character(),
+    B25 = col_character(),
+    B26 = col_character()
+  )
+  
+  #importing the information
+  df_pc <- read_csv(plot_file, col_types = col_types1)
+  #importint the list of indicators we want to track
+  indicators <- read_csv(ind_file, col_types = col_types2)
+  
+  # these are the columns we will keep for each plot to combine with the species 
+  # in the plot
+  keep_cols <- c('PLOT_ID', 'SITECODE', 'YEAR', 'EASTINGS', 'NORTHINGS', 
+                 'BAP_BROAD', 'NVC_FIRST')
+  df_pc[ , !(colnames(df_pc) %in% keep_cols)][is.na(df_pc[ , !(colnames(df_pc) %in% keep_cols)])] <- 0
+  
+  # getting the appropriate list from the table of indicator species
+  spec_list <- indicators[[site]]
+  spec_list <- spec_list[!is.na(spec_list)]
+  
+  # taking only the appropriate species from the chosen site from the data
+  df <- df_pc[, (colnames(df_pc) %in% c(keep_cols, spec_list))] %>%
+    filter(SITECODE == site)
+  
+  list_of_years <- unique(df$YEAR)
+  species_names <- colnames(df)[-(1:length(keep_cols))]
+  
+  # going through each year in turn, taking an average of the plots
+  years_av_list = list()
+  for (ii in 1:length(list_of_years)) {
+    df_year <- df %>%
+      filter(YEAR == list_of_years[ii])
+    
+    year_av <- summarize_all(df_year[, -(1:length(keep_cols))], mean)
+    year_av$Year <- list_of_years[ii]
+    
+    years_av_list[[ii]] <- year_av
+  }
+  
+  df_pc_av <- bind_rows(years_av_list)
+  
+  # this reshapes to allow a nice line graph to be drawn (reshape2 might be
+  # deprecated at some point)
+  df2 <- reshape2::melt(df_pc_av ,  id.vars = 'Year', variable.name = 'Species')
+  p <- ggplot(df2, aes(Year,value)) + 
+    geom_line(aes(colour = Species)) +
+    geom_point(aes(colour = Species)) +
+    labs(title = 'Changing species populations', y = 'Average percentage cover')
+  
+  # this turns the line plot into a nice widget with controls for the html
+  plotly::ggplotly(p)
+}
+
 ################################################################################
 # maps
 ################################################################################
@@ -324,9 +393,9 @@ map_feature <- function(df, feature) {
   
   # make palette
   domain <- range(df_feature[ ,feature])
-  pal <- colorNumeric(palette = "Purples", domain = domain)
+  pal <- colorNumeric(palette = "reds", domain = domain)
   # making the reverse pallette for the legend
-  pal_rev <- colorNumeric(palette = "Purples", domain = domain, reverse = TRUE)
+  pal_rev <- colorNumeric(palette = "reds", domain = domain, reverse = TRUE)
   
   m <- leaflet(df_feature) %>%
     addTiles() %>%
@@ -378,9 +447,9 @@ map_change <- function(feature, norm=TRUE, year_sel=3){
   pf_max <- max(abs(na.omit(total_change[pf_col][[pf_col]])))
   pf_domain <- c(-pf_max, pf_max)
   # the creation of the colour gradient function
-  pf_pal <- colorNumeric(palette = c('red', 'white', 'blue'), domain = pf_domain)
+  pf_pal <- colorNumeric(palette = c('purple', 'white', 'yellow'), domain = pf_domain)
   # the reverse palette for the legend
-  pf_pal_rev <- colorNumeric(palette = c('red', 'white', 'blue'),
+  pf_pal_rev <- colorNumeric(palette = c('purple', 'white', 'yellow'),
                              domain = pf_domain,
                              reverse = TRUE)
   
@@ -469,7 +538,7 @@ int_map_feat <- function(df, features) {
   for (jj in 1:length(features)) {
     
     domain <- range(df[[features[jj]]])
-    pal <- colorNumeric(palette = "Purples", domain = domain)
+    pal <- colorNumeric(palette = "reds", domain = domain)
     
     m <- addCircleMarkers(
       map = m,
@@ -588,7 +657,7 @@ int_map_feat_by_hab <- function(df, features) {
     
     #domain <- quantile(df_feat[[features[jj]]], probs = seq(0, 1, 1/40))[c(2,40)]
     domain <- range(df_feat[[features[jj]]])
-    pal <- colorNumeric(palette = "Purples", domain = domain)
+    pal <- colorNumeric(palette = 'Blues', domain = domain)
     
     ma <- addCircleMarkers(
       map = ma,
@@ -719,7 +788,7 @@ map_habitats <- function(df) {
       color = factpal_site(df_year$NVC_groupc),
       stroke = FALSE, fillOpacity = 7,
       group=df_year$BAP_BROAD, 
-      label=df_year$NVC_groupb, 
+      label=df_year$NVC_FIRST, 
       layerId = paste(df_year$unique_id2, list_of_years[jj], sep=""))
     
   }
@@ -776,7 +845,7 @@ map_habitats <- function(df) {
   m
 }
 
-change_map_int <- function(df, feat, norm = TRUE) {
+change_map_int <- function(df, feat, norm = FALSE, leg_title='Change') {
   
   feature <- paste(feat, 'diff', sep='_')
   feature2 <- paste(feat, 'diff', sep='_')
@@ -799,14 +868,14 @@ change_map_int <- function(df, feat, norm = TRUE) {
   pf_max <- max(abs(na.omit(df[feature][[feature]])))
   pf_domain <- c(-pf_max, pf_max)
   # the creation of the colour gradient function
-  pf_pal <- colorNumeric(palette = c('red', 'white', 'blue'), domain = pf_domain)
+  pf_pal <- colorNumeric(palette = c('purple', 'white', 'yellow'), domain = pf_domain)
   
   m <- leaflet() %>%
     addTiles() %>%
     setView(lng=east_cent, lat=north_cent, zoom = 14) %>%
     addLegend(pal = pf_pal,
               values = df[[feature]],
-              title = 'Percentage change',
+              title = leg_title,
               position = 'bottomleft')
   
   for (jj in 1:(length(unique_years)-1)) {
