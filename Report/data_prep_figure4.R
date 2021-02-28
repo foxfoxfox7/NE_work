@@ -10,6 +10,9 @@ library(janitor)
 library(knitr)
 library(reshape)
 library(colorspace)
+library(kableExtra)
+library(widgetframe)
+library(visNetwork, quietly = TRUE)
 
 ################################################################################
 # My functions
@@ -106,13 +109,18 @@ fix_names <- function(df, name_swap_vector) {
 }
 
 # This function selects only the most frequent habitat types to analyse
-select_by <- function(category, cutoff) {
-  table_cat <- as.data.frame(table(df_site[[category]]))
+select_by <- function(df, category, cutoff, include = FALSE) {
+  table_cat <- as.data.frame(table(df[[category]]))
   cat_selection <- table_cat %>%
     filter(Freq > cutoff) %>%
-    .$Var1
+    .$Var1 %>%
+    as.character(.)
   
-  selected_df <- df_site[df_site[[category]] %in% cat_selection, ]
+  if (is.character(include)) {
+    cat_selection <- c(cat_selection, include)
+  }
+  
+  selected_df <- df[df[[category]] %in% cat_selection, ]
   output_list <- list(selected_df, cat_selection)
   
   return(output_list)
@@ -246,9 +254,49 @@ get_change_by_year <- function(df) {
   return(total_change)
 }
 
+get_hab_sums <- function(df) {
+  av_cols <- c('Species_richness', 'Species_diversity', 'LIGHT', 'FERTILITY',
+               'PH', 'WETNESS', 'STRESS', 'COMPETITION', 'RUDERALS', 
+               'MEAN_HEIGHT', 'litter', 'bare x')
+  
+  df[ ,av_cols][is.na(df[ ,av_cols])] <- 0
+  
+  df <- df %>%
+    fix_names(., name_swap_bap)
+  
+  all_habs <- unique(df$BAP_BROAD)
+  
+  hab_summary_list = list()
+  for (ii in 1:length(all_habs)) {
+    df_hab <- df %>%
+      filter(BAP_BROAD == all_habs[ii])
+    
+    hab_av <- summarize_all(df_hab[, av_cols], mean)
+    hab_av$Habitat <- all_habs[ii]
+    
+    hab_summary_list[[ii]] <- hab_av
+  }
+  
+  hab_summary <- bind_rows(hab_summary_list)
+  
+  hab_summary <- hab_summary[complete.cases(hab_summary[ , 'Habitat']),]
+  row.names(hab_summary) <- hab_summary$Habitat
+  
+  return(hab_summary)
+}
+
 ################################################################################
 # Species graphs
 ################################################################################
+
+display_averages <- function(feature) {
+  df_show <- hab_sum %>%
+    filter(Habitat %in% df_site.bb[[2]])
+  df_show <- df_show[ ,c('Habitat', feature)]
+  df_show %>%
+    kbl(caption = "Average values across all LTMN sites") %>%
+    kable_styling()
+}
 
 plot_feat_by_hab_year <- function(habitat, feature) {
   if (habitat == 'BAP_BROAD'){
@@ -668,7 +716,7 @@ int_map_feat_by_hab <- function(df, features) {
       #radius = ~((df_feat[[features[jj]]] / max(df_feat[[features[jj]]])) * 10),
       stroke = FALSE, fillOpacity = 1,
       group=~BAP_BROAD, 
-      label=df_feat[[features[jj]]], 
+      label=round(df_feat[[features[jj]]], 2), 
       layerId = ~paste(unique_id2, features[jj], sep=""))# %>%
       # addLegend(pal = pal,
       #           values = df_feat[[features[jj]]],
@@ -885,7 +933,7 @@ change_map_int <- function(df, feat, norm = FALSE, leg_title='Change') {
     
     labs <- lapply(seq(nrow(df_year)), function(i) {
       paste0( '<p>Habitat: ', df_year[i, "BAP_BROAD"], '</p><p>Actual change: ', 
-              as.character(df_year[i, feature2]))
+              as.character(round(df_year[i, feature2], 2)))
     })
     
     m <- addCircleMarkers(
