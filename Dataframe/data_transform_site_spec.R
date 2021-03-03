@@ -206,8 +206,16 @@ for (ii in 1:N_files) {
 survey_total_pc <- bind_rows(survey_list_pc)
 survey_total_f <- bind_rows(survey_list_f)
 
-survey_total_pc[is.na(survey_total_pc)] <- 0
-survey_total_f[is.na(survey_total_f)] <- 0
+# replacing NA in all species cols. not in the first set of cols that we
+# take from wpd
+survey_total_pc[, -(1:length(wpd_data_cols))][is.na(survey_total_pc[, -(1:length(wpd_data_cols))])] <- 0
+survey_total_f[, -(1:length(wpd_data_cols))][is.na(survey_total_f[, -(1:length(wpd_data_cols))])] <- 0
+
+new_name_cols <- c('Plot_ID', 'Sitecode', 'Year', 'Eastings' , 'Northings',
+                   'BAP_broad', 'NVC_FIRST')
+
+colnames(survey_total_pc)[1:length(wpd_data_cols)] <- new_name_cols
+colnames(survey_total_f)[1:length(wpd_data_cols)] <- new_name_cols
 
 write.csv(survey_total_pc, 'all_species_pc.csv', row.names = FALSE)
 write.csv(survey_total_f, 'all_species_f.csv', row.names = FALSE)

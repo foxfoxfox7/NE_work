@@ -13,6 +13,8 @@ library(colorspace)
 library(kableExtra)
 library(widgetframe)
 library(visNetwork, quietly = TRUE)
+library(ggthemes)
+library(RColorBrewer)
 
 ################################################################################
 # My functions
@@ -27,13 +29,13 @@ read_all_data <- function(file_name2) {
   
   # Removing all the rows that have no real information
   # These are usually because the plot wasn't surveyed
-  blank_check <- c('Species_richness', 'bare x', 'NVC_FIRST', 'MEAN_HEIGHT')
+  blank_check <- c('Species_richness', 'Bare_ground', 'NVC_FIRST', 'Vegetation_height')
   blank_len <- length(blank_check)
   df <- df[rowSums(is.na(df[blank_check]))!=blank_len,]
   
   # Need to make year character so ggplots recognises it as categories
-  df$YEAR <- as.character(df$YEAR)
-  df$PLOT_ID <- as.character(df$PLOT_ID)
+  df$Year <- as.character(df$Year)
+  df$Plot_ID <- as.character(df$Plot_ID)
   
   return(df)
 }
@@ -50,11 +52,11 @@ get_names <- function(file_name) {
   name_swap_nvc <- name_swap_nvc[!is.na(name_swap_nvc)]
   name_swap_nvc <- name_swap_nvc[name_swap_nvc != ""]
   
-  # Getting the lsit of approved names for bap broad and priorty
-  bb_list <- name_swap$Bap_broad
+  # Getting the lsit of approved names for BAP_broad and priorty
+  bb_list <- name_swap$BAP_broad
   bb_list <- bb_list[!is.na(bb_list)]
   bb_list <- bb_list[bb_list != ""]
-  bp_list <- name_swap$Bap_priority
+  bp_list <- name_swap$BAP_priority
   bp_list <- bp_list[!is.na(bp_list)]
   bp_list <- bp_list[bp_list != ""]
   
@@ -93,16 +95,16 @@ fix_names <- function(df, name_swap_vector) {
   # Replacing know errors with the correct versions
   # (when they are too far away from the correct version for the auto to do it)
   # for (jj in 1:length(name_swap_vector)) {
-  #   df$BAP_BROAD <- replace(
-  #     df$BAP_BROAD,
-  #     df$BAP_BROAD == names(name_swap_vector[jj]), name_swap_vector[jj])
+  #   df$BAP_broad <- replace(
+  #     df$BAP_broad,
+  #     df$BAP_broad == names(name_swap_vector[jj]), name_swap_vector[jj])
   # }
-  df$BAP_BROAD <- name_swap(df$BAP_BROAD, name_swap_vector)
+  df$BAP_broad <- name_swap(df$BAP_broad, name_swap_vector)
 
   # Renaming any typos in the bap habitats and changing to NA when they don't
   # match our list of habitats
-  df$BAP_BROAD <- unname(sapply(df$BAP_BROAD, rename, list_comp=bb_list))
-  df$BAP_PRIORITY <- unname(sapply(df$BAP_PRIORITY, rename, list_comp=bp_list))
+  df$BAP_broad <- unname(sapply(df$BAP_broad, rename, list_comp=bb_list))
+  df$BAP_priority <- unname(sapply(df$BAP_priority, rename, list_comp=bp_list))
 
   
   return(df)
@@ -126,7 +128,7 @@ select_by <- function(df, category, cutoff, include = FALSE) {
   return(output_list)
 }
 
-# Converts EASTINGS and NORTHINGS to longitude and latitude
+# Converts Eastings and Northings to longitude and latitude
 convert_coords <- function(easting,northing) {
   out = cbind(easting,northing)
   mask = !is.na(easting)
@@ -144,11 +146,12 @@ convert_coords <- function(easting,northing) {
 
 transform_coords <- function(df) {
   # Converting the coordinates from BNG (UTM) to longitude and latitude
-  df_coords <- data.frame(coords = convert_coords(df$EASTINGS, df$NORTHINGS))
-  df_coords$PLOT_ID <- df$PLOT_ID
-  df2 <- full_join(df, df_coords, by = 'PLOT_ID') %>%
+  df_coords <- data.frame(coords = convert_coords(df$Eastings, df$Northings))
+  df_coords$Plot_ID <- df$Plot_ID
+  df2 <- full_join(df, df_coords, by = 'Plot_ID') %>%
     .[!duplicated(.), ]
 
+  print(df2)
   return(df2)
 }
 
@@ -168,23 +171,23 @@ get_centre_coords <- function(df) {
 get_change_by_year <- function(df) {
   
   # these columns give inofrmation about the plot but aren't quantitatively comp
-  track_cols <- c('PLOT_ID', 'coords.easting', 'coords.northing', 'BAP_BROAD',
-                  'BAP_PRIORITY', 'NVC_groupb', 'NVC_groupc')
+  track_cols <- c('Plot_ID', 'coords.easting', 'coords.northing', 'BAP_broad',
+                  'BAP_priority', 'NVC_group', 'NVC_habitat')
   # these columns wil be compared between years
-  change_cols <- c('Species_richness', 'Species_diversity', 'LIGHT', 'WETNESS',
-                   'PH', 'FERTILITY', 'COMPETITION', 'STRESS', 'RUDERALS',
-                   'MEAN_HEIGHT', 'litter', 'bare x')
+  change_cols <- c('Species_richness', 'Species_diversity', 'Light', 'Wetness',
+                   'pH', 'Fertility', 'Competition', 'Stress', 'Ruderals',
+                   'Vegetation_height', 'Litter', 'Bare_ground')
   
   df_year_list = list()
   for (ii in 1:length(unique_years)) {
     df_year <- df %>%
-      filter(YEAR == unique_years[ii]) %>%
+      filter(Year == unique_years[ii]) %>%
       select(all_of(track_cols), all_of(change_cols))
 
     # Adding the year to the column so we can put different years in the same row
     year_marker <- unique_years[ii]
     colnames(df_year)[-1] <- paste(colnames(df_year)[-1], year_marker, sep = '_')
-    df_year$PLOT_ID <- gsub('a$', '', df_year$PLOT_ID)
+    df_year$Plot_ID <- gsub('a$', '', df_year$Plot_ID)
     
     df_year_list[[ii]] <- df_year
   }
@@ -192,7 +195,7 @@ get_change_by_year <- function(df) {
   df_change <- df_year_list[[1]]
   
   for (ii in 1:(length(df_year_list)-1)) {
-    df_change <- full_join(df_change, df_year_list[[ii+1]], by = 'PLOT_ID')
+    df_change <- full_join(df_change, df_year_list[[ii+1]], by = 'Plot_ID')
   }
   
   year_change_list = list()
@@ -200,13 +203,13 @@ get_change_by_year <- function(df) {
     
     east_col <- paste('coords.easting', unique_years[ii+1], sep='_')
     north_col <- paste('coords.northing', unique_years[ii+1], sep='_')
-    bap_col <- paste('BAP_BROAD', unique_years[ii+1], sep='_')
-    nvc_col <- paste('NVC_groupc', unique_years[ii+1], sep='_')
+    bap_col <- paste('BAP_broad', unique_years[ii+1], sep='_')
+    nvc_col <- paste('NVC_habitat', unique_years[ii+1], sep='_')
     
     # building the basic blocks of the change df
     yearly_change <- tibble(
-      df_change[ , 'PLOT_ID'],
-      YEAR = unique_years[ii+1],
+      df_change[ , 'Plot_ID'],
+      Year = unique_years[ii+1],
       df_change[ ,east_col],
       df_change[ , north_col],
       df_change[ ,bap_col],
@@ -255,21 +258,21 @@ get_change_by_year <- function(df) {
 }
 
 get_hab_sums <- function(df) {
-  av_cols <- c('Species_richness', 'Species_diversity', 'LIGHT', 'FERTILITY',
-               'PH', 'WETNESS', 'STRESS', 'COMPETITION', 'RUDERALS', 
-               'MEAN_HEIGHT', 'litter', 'bare x')
+  av_cols <- c('Species_richness', 'Species_diversity', 'Light', 'Fertility',
+               'pH', 'Wetness', 'Stress', 'Competition', 'Ruderals', 
+               'Vegetation_height', 'Litter', 'Bare_ground')
   
   df[ ,av_cols][is.na(df[ ,av_cols])] <- 0
   
   df <- df %>%
     fix_names(., name_swap_bap)
   
-  all_habs <- unique(df$BAP_BROAD)
+  all_habs <- unique(df$BAP_broad)
   
   hab_summary_list = list()
   for (ii in 1:length(all_habs)) {
     df_hab <- df %>%
-      filter(BAP_BROAD == all_habs[ii])
+      filter(BAP_broad == all_habs[ii])
     
     hab_av <- summarize_all(df_hab[, av_cols], mean)
     hab_av$Habitat <- all_habs[ii]
@@ -280,7 +283,7 @@ get_hab_sums <- function(df) {
   hab_summary <- bind_rows(hab_summary_list)
   
   hab_summary <- hab_summary[complete.cases(hab_summary[ , 'Habitat']),]
-  row.names(hab_summary) <- hab_summary$Habitat
+  #row.names(hab_summary) <- hab_summary$Habitat
   
   return(hab_summary)
 }
@@ -289,23 +292,24 @@ get_hab_sums <- function(df) {
 # Species graphs
 ################################################################################
 
-display_averages <- function(feature) {
-  df_show <- hab_sum %>%
-    filter(Habitat %in% df_site.bb[[2]])
-  df_show <- df_show[ ,c('Habitat', feature)]
+display_averages <- function(df, feature) {
+  df_show <- df %>%
+    filter(Habitat %in% df_site.bb[[2]]) %>%
+    .[ ,c('Habitat', feature)]
+  df_show[[feature]] <- round(df_show[[feature]], 1)
   df_show %>%
-    kbl(caption = "Average values across all LTMN sites") %>%
+    kbl(caption = "Average values using all plots across LTMN sites and years.") %>%
     kable_styling()
 }
 
 plot_feat_by_hab_year <- function(habitat, feature) {
-  if (habitat == 'BAP_BROAD'){
+  if (habitat == 'BAP_broad'){
     df <- df_site.bb[[1]]
-  } else if (habitat == 'BAP_PRIORITY') {
+  } else if (habitat == 'BAP_priority') {
     df <- df_site.bp[[1]]
-  } else if (habitat == 'NVC_groupb') {
+  } else if (habitat == 'NVC_group') {
     df <- df_site.nvcb[[1]]
-  } else if (habitat == 'NVC_groupc') {
+  } else if (habitat == 'NVC_habitat') {
     df <- df_site.nvcc[[1]]
   } else {
     df <- df_site
@@ -315,10 +319,11 @@ plot_feat_by_hab_year <- function(habitat, feature) {
   #ylim1 = boxplot.stats(df[[feature]])$stats[c(1, 5)]
   
   # PLotting according to year (next to each other showing change)
-  pp <- ggplot(df, aes(y=.data[[feature]], x=YEAR)) +
+  pp <- ggplot(df, aes(y=.data[[feature]], x=Year)) +
     geom_boxplot() + 
     #coord_cartesian(ylim = ylim1*1.05) + 
-    facet_wrap(.data[[habitat]] ~ .)
+    facet_wrap(.data[[habitat]] ~ .) +
+    theme_economist()#+scale_colour_economist()
   #print(pp)
   pp
 }
@@ -326,16 +331,16 @@ plot_feat_by_hab_year <- function(habitat, feature) {
 # Showing the proportion of each NVC group in each bap habitat
 # with years next to each other showing change
 habitat_by_habitat <- function(group, count){
-  if (group == 'BAP_BROAD'){
+  if (group == 'BAP_broad'){
     df <- df_site.bb[[1]]
     hab_list <- df_site.bb[[2]]
-  } else if (group == 'BAP_PRIORITY') {
+  } else if (group == 'BAP_priority') {
     df <- df_site.bp[[1]]
     hab_list <- df_site.bp[[2]]
-  } else if (group == 'NVC_groupb') {
+  } else if (group == 'NVC_group') {
     df <- df_site.nvcb[[1]]
     hab_list <- df_site.nvcb[[2]]
-  } else if (group == 'NVC_groupc') {
+  } else if (group == 'NVC_habitat') {
     df <- df_site.nvcc[[1]]
     hab_list <- df_site.nvcc[[2]]
   } else {
@@ -343,7 +348,7 @@ habitat_by_habitat <- function(group, count){
   }
   
   df_count <- df %>%
-    group_by(!!sym(group), YEAR) %>%
+    group_by(!!sym(group), Year) %>%
     dplyr::count(!!sym(count))
   
   for (ii in 1:length(hab_list)) {
@@ -351,15 +356,17 @@ habitat_by_habitat <- function(group, count){
     df_hab <- df_count %>%
       filter(!!sym(group) == toString(hab_list[ii]))
     
-    ss <- ggplot(df_hab, aes(fill=.data[[count]], y=n, x=YEAR)) +
-      geom_bar(position="stack", stat="identity")
-    print(ss + ggtitle(hab_list[ii]))
+    ss <- ggplot(df_hab, aes(fill=.data[[count]], y=n, x=Year)) +
+      geom_bar(position="stack", stat="identity") + 
+      ggtitle(hab_list[ii]) + 
+      ylab('Number of plots')
+    print(ss)
   }
   
 }
 
 # # PLotting according to habitat (next to each other)
-# qq <- ggplot(df_site.bb[[1]], aes(x=BAP_BROAD, y=Species_richness)) +
+# qq <- ggplot(df_site.bb[[1]], aes(x=BAP_broad, y=Species_richness)) +
 #   geom_boxplot()
 # print(qq)
 
@@ -368,9 +375,9 @@ plot_ind_species <- function(plot_file, ind_file, site) {
   # a warning
   col_types1 <- cols(
     .default = col_double(),
-    PLOT_ID = col_character(),
-    SITECODE = col_character(),
-    BAP_BROAD = col_character(),
+    Plot_ID = col_character(),
+    Sitecode = col_character(),
+    BAP_broad = col_character(),
     NVC_FIRST = col_character()
   )
   
@@ -390,8 +397,8 @@ plot_ind_species <- function(plot_file, ind_file, site) {
   
   # these are the columns we will keep for each plot to combine with the species 
   # in the plot
-  keep_cols <- c('PLOT_ID', 'SITECODE', 'YEAR', 'EASTINGS', 'NORTHINGS', 
-                 'BAP_BROAD', 'NVC_FIRST')
+  keep_cols <- c('Plot_ID', 'Sitecode', 'Year', 'Eastings', 'Northings', 
+                 'BAP_broad', 'NVC_FIRST')
   df_pc[ , !(colnames(df_pc) %in% keep_cols)][is.na(df_pc[ , !(colnames(df_pc) %in% keep_cols)])] <- 0
   
   # getting the appropriate list from the table of indicator species
@@ -400,16 +407,16 @@ plot_ind_species <- function(plot_file, ind_file, site) {
   
   # taking only the appropriate species from the chosen site from the data
   df <- df_pc[, (colnames(df_pc) %in% c(keep_cols, spec_list))] %>%
-    filter(SITECODE == site)
+    filter(Sitecode == site)
   
-  list_of_years <- unique(df$YEAR)
+  list_of_years <- unique(df$Year)
   species_names <- colnames(df)[-(1:length(keep_cols))]
   
   # going through each year in turn, taking an average of the plots
   years_av_list = list()
   for (ii in 1:length(list_of_years)) {
     df_year <- df %>%
-      filter(YEAR == list_of_years[ii])
+      filter(Year == list_of_years[ii])
     
     year_av <- summarize_all(df_year[, -(1:length(keep_cols))], mean)
     year_av$Year <- list_of_years[ii]
@@ -422,10 +429,12 @@ plot_ind_species <- function(plot_file, ind_file, site) {
   # this reshapes to allow a nice line graph to be drawn (reshape2 might be
   # deprecated at some point)
   df2 <- reshape2::melt(df_pc_av ,  id.vars = 'Year', variable.name = 'Species')
+
   p <- ggplot(df2, aes(Year,value)) + 
     geom_line(aes(colour = Species)) +
     geom_point(aes(colour = Species)) +
-    labs(title = 'Changing species populations', y = 'Average percentage cover')
+    labs(title = 'Changing species populations', y = 'Average percentage cover') +
+    theme(legend.text = element_text(face = "italic"))
   
   # this turns the line plot into a nice widget with controls for the html
   plotly::ggplotly(p)
@@ -463,10 +472,10 @@ map_feature <- function(df, feature) {
 map_feature_by_hab <- function(df, habitat, feature, size_mod=3, year_sel=3) {
   
   unique_habs1 <- unique(df[[habitat]])
-  #factpal <- colorFactor(topo.colors(length(bb_list)), bb_list)
-  factpal_site <- colorFactor(topo.colors(length(unique_habs1)), unique_habs1)
+  nn <- length(unique_habs1)
+  factpal_site <- colorFactor(brewer.pal(n = nn, name = 'Set2'), unique_habs1)
   
-  df_year <- df %>% filter(YEAR == unique_years[year_sel])
+  df_year <- df %>% filter(Year == unique_years[year_sel])
   
   n <- leaflet(df_year) %>%
     addTiles() %>%
@@ -504,7 +513,7 @@ map_change <- function(feature, norm=TRUE, year_sel=3){
 
     
   # Setting up the dataframe for analysis, filtering by year and omiting NAs
-  df_year_pf <- total_change %>% filter(YEAR == unique_years[year_sel]) %>%
+  df_year_pf <- total_change %>% filter(Year == unique_years[year_sel]) %>%
     .[!is.na(.[ ,pf_col]),]
 
   ll <- leaflet(df_year_pf) %>%
@@ -539,10 +548,11 @@ map_change <- function(feature, norm=TRUE, year_sel=3){
 
 map_hab_by_year <- function(df, habitat) {
   
-  list_of_years <- unique(df$YEAR)
+  list_of_years <- unique(df$Year)
   list_of_habs <- unique(df[[habitat]])
   
-  factpal_site <- colorFactor(topo.colors(length(list_of_habs)), list_of_habs)
+  nn <- length(list_of_habs)
+  factpal_site <- colorFactor(brewer.pal(n = nn, name = 'Set2'), list_of_habs)
   
   centre_coords <- get_centre_coords(df)
   east_cent <- centre_coords[[1]]
@@ -553,12 +563,12 @@ map_hab_by_year <- function(df, habitat) {
     setView(lng=east_cent, lat=north_cent, zoom = 14.3) %>%
     addCircleMarkers(lng = ~coords.easting, lat = ~coords.northing,
                      color = factpal_site(df[[habitat]]),
-                     group = ~YEAR,
-                     label = ~NVC_groupb,
-                     stroke = FALSE, fillOpacity = 0.8) %>%
+                     group = ~Year,
+                     label = ~NVC_group,
+                     stroke = FALSE, fillOpacity = 0.7) %>%
     addLegend(pal = factpal_site, 
               values = df[[habitat]], 
-              opacity = 1,
+              opacity = 0.7,
               title = habitat,
               position = 'bottomleft') %>%
     addLayersControl(baseGroups = list_of_years,
@@ -574,10 +584,10 @@ int_map_feat <- function(df, features) {
   east_cent <- centre_coords[[1]]
   north_cent <- centre_coords[[2]]
   
-  df$unique_id2 <- as.character(1:length(df$PLOT_ID)) %>%
+  df$unique_id2 <- as.character(1:length(df$Plot_ID)) %>%
     str_pad(., width = 25, side = 'right', pad = 'z')
   
-  list_of_years <- unique(df$YEAR)
+  list_of_years <- unique(df$Year)
 
   m <- leaflet(df) %>%
     addTiles() %>%
@@ -594,8 +604,8 @@ int_map_feat <- function(df, features) {
       lng=~coords.easting, 
       color = pal(df[[features[jj]]]),
       stroke = FALSE, fillOpacity = 1,
-      group=~YEAR, 
-      label=~BAP_BROAD, 
+      group=~Year, 
+      label=~BAP_broad, 
       layerId = ~paste(unique_id2, features[jj], sep="")) %>%
       addLegend(pal = pal,
                 values = df[[features[jj]]],
@@ -675,9 +685,9 @@ int_map_feat <- function(df, features) {
 
 int_map_feat_by_hab <- function(df, features) {
   
-  df$BAP_BROAD[is.na(df$BAP_BROAD)] <- 'NA'
+  df$BAP_broad[is.na(df$BAP_broad)] <- 'NA'
   
-  df$unique_id2 <- as.character(1:length(df$PLOT_ID)) %>%
+  df$unique_id2 <- as.character(1:length(df$Plot_ID)) %>%
     str_pad(., width = 25, side = 'right', pad = 'z')
   
   ################
@@ -686,12 +696,12 @@ int_map_feat_by_hab <- function(df, features) {
   east_cent <- centre_coords[[1]]
   north_cent <- centre_coords[[2]]
   
-  list_of_years <- unique(df$YEAR)
-  list_of_habs <- unique(df$BAP_BROAD)
+  list_of_years <- unique(df$Year)
+  list_of_habs <- unique(df$BAP_broad)
   #print(list_of_habs)
   
   df <- df %>%
-    filter(YEAR == list_of_years[length(list_of_years)])
+    filter(Year == list_of_years[length(list_of_years)])
   
   #################
   
@@ -711,11 +721,11 @@ int_map_feat_by_hab <- function(df, features) {
       map = ma,
       lat=~coords.northing, 
       lng=~coords.easting,
-      #color = ~factpal_site(BAP_BROAD),
+      #color = ~factpal_site(BAP_broad),
       color = pal(df_feat[[features[jj]]]),
       #radius = ~((df_feat[[features[jj]]] / max(df_feat[[features[jj]]])) * 10),
       stroke = FALSE, fillOpacity = 1,
-      group=~BAP_BROAD, 
+      group=~BAP_broad, 
       label=round(df_feat[[features[jj]]], 2), 
       layerId = ~paste(unique_id2, features[jj], sep=""))# %>%
       # addLegend(pal = pal,
@@ -793,11 +803,11 @@ int_map_feat_by_hab <- function(df, features) {
 
 map_habitats <- function(df) {
   
-  df$BAP_BROAD[is.na(df$BAP_BROAD)] <- 'NA'
-  df$NVC_groupb[is.na(df$NVC_groupb)] <- 'NA'
-  df$NVC_groupc[is.na(df$NVC_groupc)] <- 'NA'
+  df$BAP_broad[is.na(df$BAP_broad)] <- 'NA'
+  df$NVC_group[is.na(df$NVC_group)] <- 'NA'
+  df$NVC_habitat[is.na(df$NVC_habitat)] <- 'NA'
   
-  df$unique_id2 <- as.character(1:length(df$PLOT_ID)) %>%
+  df$unique_id2 <- as.character(1:length(df$Plot_ID)) %>%
     str_pad(., width = 25, side = 'right', pad = 'z')
   
   ################
@@ -806,11 +816,12 @@ map_habitats <- function(df) {
   east_cent <- centre_coords[[1]]
   north_cent <- centre_coords[[2]]
   
-  list_of_years <- unique(df$YEAR)
-  list_of_habs <- unique(df$BAP_BROAD)
-  list_of_nvchabs <- unique(df$NVC_groupc)
+  list_of_years <- unique(df$Year)
+  list_of_habs <- unique(df$BAP_broad)
+  list_of_nvchabs <- unique(df$NVC_habitat)
   
-  factpal_site <- colorFactor(topo.colors(length(list_of_nvchabs)), list_of_nvchabs)
+  nn <- length(list_of_nvchabs)
+  factpal_site <- colorFactor(brewer.pal(n = nn, name = 'Set2'), list_of_nvchabs)
   
   #################
   
@@ -820,22 +831,23 @@ map_habitats <- function(df) {
     addTiles() %>%
     setView(lng=east_cent, lat=north_cent, zoom = 14) %>%
     addLegend(pal = factpal_site,
-              values = df$NVC_groupc,
+              values = df$NVC_habitat,
               title = 'NVC habitat',
+              opacity = 0.7,
               position = 'bottomleft')
   
   for (jj in 1:length(list_of_years)) {
     
     df_year <- df %>%
-      filter(YEAR == list_of_years[jj])
+      filter(Year == list_of_years[jj])
     
     m <- addCircleMarkers(
       map = m,
       lat=df_year$coords.northing, 
       lng=df_year$coords.easting,
-      color = factpal_site(df_year$NVC_groupc),
-      stroke = FALSE, fillOpacity = 7,
-      group=df_year$BAP_BROAD, 
+      color = factpal_site(df_year$NVC_habitat),
+      stroke = FALSE, fillOpacity = 0.7,
+      group=df_year$BAP_broad, 
       label=df_year$NVC_FIRST, 
       layerId = paste(df_year$unique_id2, list_of_years[jj], sep=""))
     
@@ -908,7 +920,7 @@ change_map_int <- function(df, feat, norm = FALSE, leg_title='Change') {
   east_cent <- centre_coords[[1]]
   north_cent <- centre_coords[[2]]
   
-  df$unique_id2 <- as.character(1:length(df$PLOT_ID)) %>%
+  df$unique_id2 <- as.character(1:length(df$Plot_ID)) %>%
     str_pad(., width = 25, side = 'right', pad = 'z')
   
   
@@ -916,23 +928,29 @@ change_map_int <- function(df, feat, norm = FALSE, leg_title='Change') {
   pf_max <- max(abs(na.omit(df[feature][[feature]])))
   pf_domain <- c(-pf_max, pf_max)
   # the creation of the colour gradient function
-  pf_pal <- colorNumeric(palette = c('purple', 'white', 'yellow'), domain = pf_domain)
+  pf_pal <- colorNumeric(palette = c('purple', 'white', 'yellow'),
+                         domain = pf_domain)
+  pf_pal_rev <- colorNumeric(palette = c('purple', 'white', 'yellow'),
+                         domain = pf_domain, reverse = TRUE)
+  
   
   m <- leaflet() %>%
     addTiles() %>%
     setView(lng=east_cent, lat=north_cent, zoom = 14) %>%
-    addLegend(pal = pf_pal,
-              values = df[[feature]],
+    addLegend(pal = pf_pal_rev,
+              values = pf_domain,
               title = leg_title,
-              position = 'bottomleft')
+              position = 'bottomleft',
+              labFormat = labelFormat(transform =
+                                        function(x) sort(x, decreasing = TRUE)))
   
   for (jj in 1:(length(unique_years)-1)) {
     
     df_year <- df %>%
-      filter(YEAR == unique_years[jj+1])
+      filter(Year == unique_years[jj+1])
     
     labs <- lapply(seq(nrow(df_year)), function(i) {
-      paste0( '<p>Habitat: ', df_year[i, "BAP_BROAD"], '</p><p>Actual change: ', 
+      paste0( '<p>Habitat: ', df_year[i, "BAP_broad"], '</p><p>Actual change: ', 
               as.character(round(df_year[i, feature2], 2)))
     })
     
@@ -942,8 +960,8 @@ change_map_int <- function(df, feat, norm = FALSE, leg_title='Change') {
       lng = df_year$coords.easting, 
       color = pf_pal(df_year[[feature]]),
       stroke = FALSE, fillOpacity = 1,
-      group = df_year$BAP_BROAD, 
-      #label = sprintf('Change: %s Habitat: %s', df_year[[feature2]], df_year$BAP_BROAD),#df_year[[feature2]], 
+      group = df_year$BAP_broad, 
+      #label = sprintf('Change: %s Habitat: %s', df_year[[feature2]], df_year$BAP_broad),#df_year[[feature2]], 
       label = lapply(labs, htmltools::HTML),
       layerId = paste(df_year$unique_id2, unique_years[jj+1], sep=""))
   }

@@ -1,16 +1,16 @@
-wrong_name,right_name,Bap_broad,Bap_priority,NVC_code,NVC_name
-Broadleaved Woodland,"Broadleaved, Mixed and Yew Woodland",Acid Grassland,Aquifer Fed Naturally Fluctuating Water Bodies,W,Woodland and scrub
-Scrub,Dwarf Shrub Heath,Arable and Horticultural,Arable Field Margins,M,Mires
-Heathland,Dwarf Shrub Heath,Bogs,Blanket Bog,H,Heath
-Grassland,,Boundary and Linear Features,Blue Mussel Beds on Sediment,MG,Mesotrophic grassland
-,,"Broadleaved, Mixed and Yew Woodland",Calaminarian Grasslands,CG,Calcicolous grassland
-,,Calcareous Grassland,Carbonate Mounds,U,Calcifugus grassland and montane
-,,Coniferous Woodland,Coastal and Floodplain Grazing Marsh,A,Aquatic communities
-,,Dwarf Shrub Heath,Coastal Saltmarsh,S,Swamp and tall-herb ferns
-,,"Fen, Marsh and Swamp",Coastal Sand Dunes,SM,Salt-marsh
-,,Improved Grassland,Coastal Vegetated Shingle,SD,"Shingle, strandline and sand-dune"
-,,Inland Rock,Cold-Water Coral Reefs,MC,Maritime cliff
-,,Montane Habitats,Deep-Sea Sponge Communities,OV,Vegetation of open habitats
+wrong_name,right_name,BAP_broad,BAP_priority,NVC_code,NVC_name
+Broadleaved Woodland,"Broadleaved, Mixed and Yew Woodland",Acid Grassland,Aquifer Fed Naturally Fluctuating Water Bodies,W,Woodland and scrub (W)
+Scrub,Dwarf Shrub Heath,Arable and Horticultural,Arable Field Margins,M,Mires (M)
+Heathland,Dwarf Shrub Heath,Bogs,Blanket Bog,H,Heath (H)
+Grassland,,Boundary and Linear Features,Blue Mussel Beds on Sediment,MG,Mesotrophic grassland (MG)
+,,"Broadleaved, Mixed and Yew Woodland",Calaminarian Grasslands,CG,Calcareous grassland (CG)
+,,Calcareous Grassland,Carbonate Mounds,U,Calcifugus grassland and montane (U)
+,,Coniferous Woodland,Coastal and Floodplain Grazing Marsh,A,Aquatic communities (A)
+,,Dwarf Shrub Heath,Coastal Saltmarsh,S,Swamp and tall-herb ferns (S)
+,,"Fen, Marsh and Swamp",Coastal Sand Dunes,SM,Salt-marsh (SM)
+,,Improved Grassland,Coastal Vegetated Shingle,SD,"Shingle, strandline and sand-dune (SD)"
+,,Inland Rock,Cold-Water Coral Reefs,MC,Maritime cliff (MC)
+,,Montane Habitats,Deep-Sea Sponge Communities,OV,Vegetation of open habitats (OV)
 ,,Neutral Grassland,Esuarine Rocky Habitats,,
 ,,Rivers and Streams,Eutrophic Standing Waters,,
 ,,Standing Open Waters and Canals,File Shell Beds,,
