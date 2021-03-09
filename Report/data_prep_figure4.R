@@ -1,4 +1,3 @@
-library(tidyverse)
 library(stringdist)
 library(readxl)
 library(leaflet)
@@ -15,6 +14,7 @@ library(widgetframe)
 library(visNetwork, quietly = TRUE)
 library(ggthemes)
 library(RColorBrewer)
+library(tidyverse)
 
 ################################################################################
 # My functions
@@ -147,20 +147,22 @@ convert_coords <- function(easting,northing) {
 transform_coords <- function(df) {
   # Converting the coordinates from BNG (UTM) to longitude and latitude
   df_coords <- data.frame(coords = convert_coords(df$Eastings, df$Northings))
+  
+  colnames(df_coords) <- c('Longitude', 'Latitude')
+  
   df_coords$Plot_ID <- df$Plot_ID
   df2 <- full_join(df, df_coords, by = 'Plot_ID') %>%
     .[!duplicated(.), ]
 
-  print(df2)
   return(df2)
 }
 
 get_centre_coords <- function(df) {
   # Finding the centre point of the site
-  east_min <- min(df[!is.na(df[ ,'coords.easting']),][ ,'coords.easting'])
-  east_max <- max(df[!is.na(df[ ,'coords.easting']),][ ,'coords.easting'])
-  north_min <- min(df[!is.na(df[ ,'coords.northing']),][ ,'coords.northing'])
-  north_max <- max(df[!is.na(df[ ,'coords.northing']),][ ,'coords.northing'])
+  east_min <- min(df[!is.na(df[ ,'Longitude']),][ ,'Longitude'])
+  east_max <- max(df[!is.na(df[ ,'Longitude']),][ ,'Longitude'])
+  north_min <- min(df[!is.na(df[ ,'Latitude']),][ ,'Latitude'])
+  north_max <- max(df[!is.na(df[ ,'Latitude']),][ ,'Latitude'])
   
   east_cent = (east_min + east_max) / 2
   north_cent = (north_min + north_max) / 2
@@ -171,7 +173,7 @@ get_centre_coords <- function(df) {
 get_change_by_year <- function(df) {
   
   # these columns give inofrmation about the plot but aren't quantitatively comp
-  track_cols <- c('Plot_ID', 'coords.easting', 'coords.northing', 'BAP_broad',
+  track_cols <- c('Plot_ID', 'Longitude', 'Latitude', 'BAP_broad',
                   'BAP_priority', 'NVC_group', 'NVC_habitat')
   # these columns wil be compared between years
   change_cols <- c('Species_richness', 'Species_diversity', 'Light', 'Wetness',
@@ -201,8 +203,8 @@ get_change_by_year <- function(df) {
   year_change_list = list()
   for (ii in 1:(length(unique_years)-1)) {
     
-    east_col <- paste('coords.easting', unique_years[ii+1], sep='_')
-    north_col <- paste('coords.northing', unique_years[ii+1], sep='_')
+    east_col <- paste('Longitude', unique_years[ii+1], sep='_')
+    north_col <- paste('Latitude', unique_years[ii+1], sep='_')
     bap_col <- paste('BAP_broad', unique_years[ii+1], sep='_')
     nvc_col <- paste('NVC_habitat', unique_years[ii+1], sep='_')
     
@@ -288,6 +290,15 @@ get_hab_sums <- function(df) {
   return(hab_summary)
 }
 
+rem_plot <- function(df, plot) {
+  for (ii in 1:length(plot)) {
+    df <- df %>%
+      filter(Plot_ID != plot[ii])
+  }
+  
+  return(df)
+}
+
 ################################################################################
 # Species graphs
 ################################################################################
@@ -300,6 +311,45 @@ display_averages <- function(df, feature) {
   df_show %>%
     kbl(caption = "Average values using all plots across LTMN sites and years.") %>%
     kable_styling()
+}
+
+display_survey_dates <- function(df) {
+
+  df_dates <- df %>%
+    select(Year, Date) %>%
+    group_by(Year) %>%
+    summarise(
+      Earliest_date = min(Date, na.rm = T),
+      Latest_date = max(Date, na.rm = T)
+    ) 
+  
+  df_dates$Earliest_date <- format(df_dates$Earliest_date, '%d-%b')
+  df_dates$Latest_date <- format(df_dates$Latest_date, '%d-%b')
+  
+  df_dates %>%
+    kbl(caption = "The range of dates the plots were surveyed on.") %>%
+    kable_styling()
+}
+
+display_no_plots <- function(df, habitat, feature, title = "Total number of plots for each year and habitat") {
+  
+  df <- df[!is.na(df[[habitat]]), ]
+  
+  col1 <- min(df$Year)
+  
+  df_na <- df %>%
+    group_by(Year, !!sym(habitat)) %>%
+    summarise(na_count = sum(!is.na(!!sym(feature))), .groups = 'drop_last') %>%
+    pivot_wider(names_from = Year, values_from = na_count) %>% 
+    arrange(desc(!!sym(col1))) %>%
+    adorn_totals("row")
+  
+  df_na[is.na(df_na)] <- 0
+  
+  df_na  %>%
+    kbl(caption = title) %>%
+    kable_styling() %>%
+    kable_material("striped")
 }
 
 plot_feat_by_hab_year <- function(habitat, feature) {
@@ -316,6 +366,8 @@ plot_feat_by_hab_year <- function(habitat, feature) {
     print('Habitat grouping not recognised')
   }
   
+  df <- df[!is.na(df[ ,feature]),]
+  
   #ylim1 = boxplot.stats(df[[feature]])$stats[c(1, 5)]
   
   # PLotting according to year (next to each other showing change)
@@ -324,8 +376,7 @@ plot_feat_by_hab_year <- function(habitat, feature) {
     #coord_cartesian(ylim = ylim1*1.05) + 
     facet_wrap(.data[[habitat]] ~ .) +
     theme_economist()#+scale_colour_economist()
-  #print(pp)
-  pp
+  print(pp)
 }
 
 # Showing the proportion of each NVC group in each bap habitat
@@ -457,7 +508,7 @@ map_feature <- function(df, feature) {
   m <- leaflet(df_feature) %>%
     addTiles() %>%
     setView(lng=east_cent, lat=north_cent, zoom = 14) %>%
-    addCircleMarkers(lng = ~coords.easting, lat = ~coords.northing,
+    addCircleMarkers(lng = ~Longitude, lat = ~Latitude,
                      color = ~pal(df_feature[[feature]]),
                      stroke = FALSE, fillOpacity = 0.5) %>%
     addLegend(pal = pal_rev, values = ~df_feature[[feature]],
@@ -480,7 +531,7 @@ map_feature_by_hab <- function(df, habitat, feature, size_mod=3, year_sel=3) {
   n <- leaflet(df_year) %>%
     addTiles() %>%
     setView(lng=east_cent, lat=north_cent, zoom = 14.3) %>%
-    addCircleMarkers(lng = ~coords.easting, lat = ~coords.northing,
+    addCircleMarkers(lng = ~Longitude, lat = ~Latitude,
                      radius = ~df_year[[feature]]/size_mod,
                      color = ~factpal_site(df_year[[habitat]]),
                      stroke = FALSE, fillOpacity = 0.8) %>%
@@ -519,7 +570,7 @@ map_change <- function(feature, norm=TRUE, year_sel=3){
   ll <- leaflet(df_year_pf) %>%
     addTiles() %>%
     setView(lng=east_cent, lat=north_cent, zoom = 14) %>%
-    addCircleMarkers(lng = ~coords.easting, lat = ~coords.northing,
+    addCircleMarkers(lng = ~Longitude, lat = ~Latitude,
                      color = pf_pal(df_year_pf[[pf_col]]),
                      stroke = FALSE, fillOpacity = 0.8) %>%
     addLegend(pal = pf_pal, values = df_year_pf[[pf_col]],
@@ -530,8 +581,8 @@ map_change <- function(feature, norm=TRUE, year_sel=3){
 
 }
 
-# print(df_site3$coords.easting)
-# print(df_site3$coords.northing)
+# print(df_site3$Longitude)
+# print(df_site3$Latitude)
 # p <- leaflet() %>% 
 #   addWMSTiles(
 #     "https://api.os.uk/maps/raster/v1/wmts?key=1YWdNkHgvWmilsXKITE5JHpHU0We2DOt",
@@ -539,14 +590,16 @@ map_change <- function(feature, norm=TRUE, year_sel=3){
 #   ) %>% 
 #   addTiles() %>%
 #   setView(lng=east_cent, lat=north_cent, zoom = 14.4) %>%
-#   addMarkers(data = df_site, lng = ~coords.easting, lat = ~coords.northing)
+#   addMarkers(data = df_site, lng = ~Longitude, lat = ~Latitude)
 # p
 
 ################################################################################
 # interactive maps
 ################################################################################
 
-map_hab_by_year <- function(df, habitat) {
+map_hab_by_year <- function(df, habitat, label) {
+  
+  df <- df[!is.na(df[[habitat]]), ]
   
   list_of_years <- unique(df$Year)
   list_of_habs <- unique(df[[habitat]])
@@ -561,10 +614,10 @@ map_hab_by_year <- function(df, habitat) {
   n <- leaflet(df) %>%
     addTiles() %>%
     setView(lng=east_cent, lat=north_cent, zoom = 14.3) %>%
-    addCircleMarkers(lng = ~coords.easting, lat = ~coords.northing,
+    addCircleMarkers(lng = ~Longitude, lat = ~Latitude,
                      color = factpal_site(df[[habitat]]),
                      group = ~Year,
-                     label = ~NVC_group,
+                     label = df[[label]],
                      stroke = FALSE, fillOpacity = 0.7) %>%
     addLegend(pal = factpal_site, 
               values = df[[habitat]], 
@@ -600,8 +653,8 @@ int_map_feat <- function(df, features) {
     
     m <- addCircleMarkers(
       map = m,
-      lat=~coords.northing, 
-      lng=~coords.easting, 
+      lat=~Latitude, 
+      lng=~Longitude, 
       color = pal(df[[features[jj]]]),
       stroke = FALSE, fillOpacity = 1,
       group=~Year, 
@@ -719,8 +772,8 @@ int_map_feat_by_hab <- function(df, features) {
     
     ma <- addCircleMarkers(
       map = ma,
-      lat=~coords.northing, 
-      lng=~coords.easting,
+      lat=~Latitude, 
+      lng=~Longitude,
       #color = ~factpal_site(BAP_broad),
       color = pal(df_feat[[features[jj]]]),
       #radius = ~((df_feat[[features[jj]]] / max(df_feat[[features[jj]]])) * 10),
@@ -784,20 +837,8 @@ int_map_feat_by_hab <- function(df, features) {
                         options = layersControlOptions(collapsed = F)) %>%
     htmlwidgets::onRender(
       widget_text
-    )# %>%
-    # htmlwidgets::onRender("
-    # function(el, x) {
-    #   var updateLegend = function () {
-    #       var selectedGroup = document.querySelectorAll('input:checked')[0].nextSibling.innerText.substr(1);
-    # 
-    #       document.querySelectorAll('.legend').forEach(a => a.hidden=true);
-    #       document.querySelectorAll('.legend').forEach(l => {
-    #         if (l.children[0].children[0].innerText == selectedGroup) l.hidden=false;
-    #       });
-    #   };
-    #   updateLegend();
-    #   this.on('baselayerchange', e => updateLegend());
-    # }")
+    )
+  
   ma
 }
 
@@ -843,8 +884,8 @@ map_habitats <- function(df) {
     
     m <- addCircleMarkers(
       map = m,
-      lat=df_year$coords.northing, 
-      lng=df_year$coords.easting,
+      lat=df_year$Latitude, 
+      lng=df_year$Longitude,
       color = factpal_site(df_year$NVC_habitat),
       stroke = FALSE, fillOpacity = 0.7,
       group=df_year$BAP_broad, 
@@ -956,8 +997,8 @@ change_map_int <- function(df, feat, norm = FALSE, leg_title='Change') {
     
     m <- addCircleMarkers(
       map = m,
-      lat = df_year$coords.northing, 
-      lng = df_year$coords.easting, 
+      lat = df_year$Latitude, 
+      lng = df_year$Longitude, 
       color = pf_pal(df_year[[feature]]),
       stroke = FALSE, fillOpacity = 1,
       group = df_year$BAP_broad, 

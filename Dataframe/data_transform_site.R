@@ -14,7 +14,7 @@ getwd()
 # Reading in information from disk
 ################################################################################
 
-data <- '../Data/'
+data <- '../Data_set/'
 list_of_files <- list.files(data)
 N_files <- length(list_of_files)
 print(list_of_files)
@@ -177,8 +177,8 @@ for (ii in 1:N_files) {
   wpd$PLOT_ID <- as.character(wpd$PLOT_ID)
 
   # These are the columns we want from wpd
-  wpd_data_cols <- c('PLOT_ID', 'SITECODE', 'YEAR', 'EASTINGS' , 'NORTHINGS',
-                     'BAP_BROAD', 'BAP_PRIORITY', 'NVC_FIRST',
+  wpd_data_cols <- c('PLOT_ID', 'SITECODE', 'YEAR', 'EASTINGS' , 'NORTHINGS', 
+                     'SDATE', 'BAP_BROAD', 'BAP_PRIORITY', 'NVC_FIRST',
                      'LIGHT', 'WETNESS', 'PH', 'FERTILITY',
                      'COMPETITION', 'STRESS', 'RUDERALS')
   wpd_data <- wpd %>%
@@ -187,7 +187,7 @@ for (ii in 1:N_files) {
   wpd_data$BAP_BROAD <- str_to_title(wpd_data$BAP_BROAD)
   # Helps with some of the typos involving capital letters
   # Date is used for CEH
-  #wpd_data$SDATE <- as.character(wpd_data$SDATE)
+  wpd_data$SDATE <- wpd_data$SDATE
 
   # SEPARATING OUT THE NVC COLUMN data
   wpd_data$NVC_group <- str_extract(wpd_data$NVC_FIRST, '^.*?(?=:)')
@@ -197,7 +197,7 @@ for (ii in 1:N_files) {
   # Combining on PLOT_ID
   spec_pp.bapb <- full_join(spec_pp, wpd_data, by = "PLOT_ID")
 
-  spec_num_list[[ii]] <- spec_pp.bapb
+  #spec_num_list[[ii]] <- spec_pp.bapb
 
   ##############################################################################
   # Ground features
@@ -342,7 +342,9 @@ survey_total <- survey_total[rowSums(is.na(survey_total[,blank_check]))!=blank_l
 print(colnames(survey_total))
 
 remove_cols <- c('bare ground', 'bare rock', 'bare soil', 'open water',
-                   'bare peat', 'bare earth')
+                   'bare peat', 'bare earth', 'dead wood', 'bare soil/sand',
+                 'leaf litter', 'exposed stone', 'exposed rock', 'deadwood',
+                 'glacial pebbles')
 
 survey_total <- survey_total[ , -which(names(survey_total) %in% remove_cols)]
 
@@ -352,7 +354,7 @@ survey_total[replace_na_cols][is.na(survey_total[replace_na_cols])] <- 0
 
 
 colnames(survey_total) <-c('Plot_ID', 'Species_richness', 'Species_diversity', 
-                      'Sitecode', 'Year', 'Eastings', 'Northings', 
+                      'Sitecode', 'Year', 'Eastings', 'Northings', 'Date',
                       'BAP_broad', 'BAP_priority', 'NVC_FIRST', 'Light', 
                       'Wetness', 'pH', 'Fertility', 'Competition', 'Stress', 
                       'Ruderals', 'NVC_subgroup', 'NVC_group', 'NVC_habitat', 
