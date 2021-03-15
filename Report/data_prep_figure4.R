@@ -150,8 +150,10 @@ transform_coords <- function(df) {
   
   colnames(df_coords) <- c('Longitude', 'Latitude')
   
-  df_coords$Plot_ID <- df$Plot_ID
-  df2 <- full_join(df, df_coords, by = 'Plot_ID') %>%
+  #df_coords$Plot_ID <- df$Plot_ID
+  
+  df_coords[ ,c('Plot_ID', 'Year', 'Sitecode')] <- df[ ,c('Plot_ID', 'Year', 'Sitecode')]
+  df2 <- full_join(df, df_coords, by = c('Plot_ID', 'Year', 'Sitecode')) %>%
     .[!duplicated(.), ]
 
   return(df2)
@@ -375,7 +377,9 @@ plot_feat_by_hab_year <- function(habitat, feature) {
     geom_boxplot() + 
     #coord_cartesian(ylim = ylim1*1.05) + 
     facet_wrap(.data[[habitat]] ~ .) +
-    theme_economist()#+scale_colour_economist()
+    theme_economist() +#+scale_colour_economist()
+    #theme_bw() + 
+    theme(axis.title=element_text(size=14))
   print(pp)
 }
 
@@ -534,7 +538,8 @@ map_feature_by_hab <- function(df, habitat, feature, size_mod=3, year_sel=3) {
     addCircleMarkers(lng = ~Longitude, lat = ~Latitude,
                      radius = ~df_year[[feature]]/size_mod,
                      color = ~factpal_site(df_year[[habitat]]),
-                     stroke = FALSE, fillOpacity = 0.8) %>%
+                     stroke = FALSE, fillOpacity = 0.8,
+                     label=~Plot_ID) %>%
     addLegend(pal = factpal_site, values = ~df_year[[habitat]], opacity = 1,
               title = habitat)
   
