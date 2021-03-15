@@ -1,5 +1,5 @@
 ---
-title: "Ingleborough: a Long-Term Monitoring Network report"
+title: "Lullington Heath: a Long-Term Monitoring Network report"
 #author: "Kieran Fox"
 #date: "22/02/2021"
 #output: html_document
@@ -32,24 +32,23 @@ site_code <- 'B14'
 df_site <- filter(df_all, Sitecode == site_code) %>%
   fix_names(., name_swap_bap) %>%
   # transform the eastings and northings into latitude and longitude
-  transform_coords(.)
-
-df_site <- df_site %>%
+  transform_coords(.) %>%
   distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
+
 
 # Converts the NVC abbreviations to the full names
 df_site$NVC_habitat <- name_swap(df_site$NVC_habitat, name_swap_nvc)
 df_site$Year <- as.character(df_site$Year)
 
-#df_site <- rem_plot(df_site, c(30, '30', '30a')) # Lullington
+df_site <- rem_plot(df_site, c(30, '30', '30a')) # Lullington
 #df_site <- rem_plot(df_site, c(14, '14', '14a')) # thursley
 
 # Making the sub dataframes with only the major habitats selected
 #object[[1]] is the data frame. object[[2]] is the list of habitats
-df_site.bb <- select_by(df_site, 'BAP_broad', 10)#include = c('Calcareous Grassland', 'Dwarf Shrub Heath'))
+df_site.bb <- select_by(df_site, 'BAP_broad', 700, include = c('Calcareous Grassland', 'Dwarf Shrub Heath'))
 df_site.bp <- select_by(df_site, 'BAP_priority', 15)
 df_site.nvcb <- select_by(df_site, 'NVC_group', 15)
-df_site.nvcc <- select_by(df_site, 'NVC_habitat', 5)#, include = c('Calcareous grassland (CG)', 'Heath (H)'))
+df_site.nvcc <- select_by(df_site, 'NVC_habitat', 500, include = c('Calcareous grassland (CG)', 'Heath (H)'))
 
 # the centre points of the maps
 east_cent <- get_centre_coords(df_site)[[1]]
@@ -59,13 +58,12 @@ unique_years <- unique(df_site$Year)
 unique_habs <- unique(df_site$BAP_broad)
 unique_nvchabs <- unique(df_site$NVC_habitat)
 
-df_change <- get_change_by_year(df_site)
-
-df_all2 <- read_csv('./dataframes/all_plots.csv')
-hab_sum <- get_hab_sums(df_all2)
-
-df_change <- df_change %>%
+df_change <- df_site %>%
+  get_change_by_year() %>%
   distinct(Plot_ID, Year, .keep_all = TRUE)
+
+hab_sum <- read_csv('./dataframes/all_plots.csv') %>%
+  get_hab_sums()
 
 #df_change <- rem_plot(df_change, c(14, '14', '14a')) # thursley
 ```
@@ -89,7 +87,7 @@ Currently we do not present BAP priority habitats as there is too much missing d
 ### BAP broad habitats
 
 ```{r Bap_habitat}
-map_hab_by_year(df_site.bb[[1]], 'BAP_broad', 'BAP_broad')
+map_hab_by_year(df_site, 'BAP_broad', 'BAP_priority')#df_site.bb[[1]]
 ```
 
 Each circle on the map represents a plot or quadrat. The locations of the plots are recorded so that they can be reused for each survey. This means plots can be compared from year to year and changes are likely due to changing habitat. The exact location is recorded using feno markers placed in the ground. Sometimes these are lost between surveys and in such cases, the coordinates are used to roughly match the location. This can mean that sometimes the plots move a couple of metres. In some cases, not all plots are surveyed each time, typically due to time restraints on the survey.
@@ -106,7 +104,8 @@ There are usually a mix of habitats on LTMN sites with certain habitats being mo
 After the species data has been collected for each plot, it is processed using MAVIS software which uses the plants and plant abundance to categorise the plots into their NVC habitat classifications. It should be noted that accurate categorisation is often difficult due to sites having a mix of habitats and transitions between them. For this reason the categorisation is given a confidence percentage which is shown when hovering the mouse over the data points on the map below.
 
 ```{r NVC_habitats}
-map_hab_by_year(df_site.nvcc[[1]], 'NVC_habitat', 'NVC_FIRST')
+#map_hab_by_year(df_site.nvcc[[1]], 'NVC_habitat', 'NVC_FIRST')
+map_hab_by_year(df_site, 'NVC_habitat', 'NVC_FIRST')
 ```
 
 Each circle on the map represents a plot or quadrat. The locations of the plots are recorded so that they can be reused for each survey. This means plots can be compared from year to year and changes are likely due to changing habitat. The exact location is recorded using feno markers placed in the ground. Sometimes these are lost between surveys and in such cases, the coordinates are used to roughly match the location. This can mean that sometimes the plots move a couple of metres. In some cases, not all plots are surveyed each time, typically due to time restraints on the survey.

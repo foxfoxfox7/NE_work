@@ -18,10 +18,10 @@ df_site <- filter(df_all, Sitecode == site_code) %>%
   fix_names(., name_swap_bap) %>%
   # transform the eastings and northings into latitude and longitude
   transform_coords(.) %>%
-  distinct(.)
-
-df_site <- df_site %>%
   distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
+
+# df_site <- df_site %>%
+#   distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
 
 df_site <- rem_plot(df_site, c(30, '30', '30a')) # Lullington
 

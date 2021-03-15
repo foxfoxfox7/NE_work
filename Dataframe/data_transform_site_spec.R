@@ -14,7 +14,7 @@ getwd()
 # Reading in information from disk
 ################################################################################
 
-data <- '../Data_set/'
+data <- '../Data/'
 list_of_files <- list.files(data)
 N_files <- length(list_of_files)
 print(list_of_files)
@@ -192,11 +192,11 @@ for (ii in 1:N_files) {
   
   # Combining on PLOT_ID
   full_species_pc <- full_join(wpd_data, percent_cover, by = "PLOT_ID")
-  full_species_f <- full_join(wpd_data, percent_cover, by = "PLOT_ID")
+  full_species_f <- full_join(wpd_data, frequency, by = "PLOT_ID")
 
 
   survey_list_pc[[ii]] <- full_species_pc
-  survey_list_f[[ii]] <- full_species_pc
+  survey_list_f[[ii]] <- full_species_f
 }
 
 ################################################################################
@@ -217,8 +217,8 @@ new_name_cols <- c('Plot_ID', 'Sitecode', 'Year', 'Eastings' , 'Northings',
 colnames(survey_total_pc)[1:length(wpd_data_cols)] <- new_name_cols
 colnames(survey_total_f)[1:length(wpd_data_cols)] <- new_name_cols
 
-write.csv(survey_total_pc, 'all_species_pc.csv', row.names = FALSE)
-write.csv(survey_total_f, 'all_species_f.csv', row.names = FALSE)
+write.csv(survey_total_pc, 'all_all_species_pc.csv', row.names = FALSE)
+write.csv(survey_total_f, 'all_all_species_f.csv', row.names = FALSE)
 
 wb <- createWorkbook()
 survey_sheet <- addWorksheet(wb, 'presentation_plots')
