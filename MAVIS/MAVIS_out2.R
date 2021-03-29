@@ -25,13 +25,13 @@ get_comp <- function(set) {
 # Setting up the environment
 ################################################################################
 
-setwd('//CAM381FS/x955120$/Projects/LTMN_veg')
+setwd('C:/Users/kiera/Work/NE_work/MAVIS/')
 getwd()
 
 nvc_dir <- './NVC_output/'
 ge_dir <- './GE_output/'
 dat_dir <- './R_dat/'
-data <- './Data/'
+data <- './Data_test/'
 MAVIS_data <- './MAVIS_data/'
 
 nvc_files <- readtext(nvc_dir)
@@ -46,6 +46,8 @@ N_dat <- length(dat_files)
 data_files <- list.files(data)
 N_data <- length(data_files)
 
+# The Dat file is the file generated from MAVIS in which changes the 
+# plot id that come from mavis, back to the original plot ids
 if ((N_nvc != N_ge) | (N_ge != N_dat) | (N_dat != N_data)) {
   stop('There should be the same number of NVC, GE, Dat and Survey files')
 }
@@ -78,38 +80,36 @@ for (ii in 1:dim(nvc_files)[1]) {
   for (jj in 1:length(nvc_para)) {
     # extractes the paragraphs in the nvc output
     # and turns them into a list of words
-    nvc_set <- tokenize_words(nvc_para[jj])
-    nvc_set <- nvc_set[[1]]
-
-    # These capitalise the first letters in the NVC groups
-    # but not the letters after the number
-    nvc_cap1 <- paste(toupper(str_extract(nvc_set[4], '^(.*?)\\D+')),
-                      gsub('^(.*?)\\D+', '', nvc_set[4]),
-                      sep='')
-    nvc_cap2 <- paste(toupper(str_extract(nvc_set[7], '^(.*?)\\D+')),
-                      gsub('^(.*?)\\D+', '', nvc_set[7]),
-                      sep='')
-    nvc_cap3 <- paste(toupper(str_extract(nvc_set[10], '^(.*?)\\D+')),
-                      gsub('^(.*?)\\D+', '', nvc_set[10]),
-                      sep='')
-
-    # These combine the NVC group and the percentage maps
-    # and puts the ifo in a df
-    nvc_plots_df <- data.frame(PLOT_ID = nvc_set[2],
-                               nvc1 = paste(nvc_cap1, nvc_set[5], sep=':'),
-                               nvc2 = paste(nvc_cap2, nvc_set[8], sep=':'),
-                               nvc3 = paste(nvc_cap3, nvc_set[11], sep=':'))
+    nvc_set <- tokenize_words(nvc_para[jj])[[1]]
+    
+    plot_nvc <- list('PLOT_ID' = nvc_set[2])
+    
+    for (kk in 1:10) {
+      
+      # These capitalise the first letters in the NVC groups
+      # but not the letters after the number
+      nvc_class <- paste0(toupper(str_extract(nvc_set[3*kk+1], '^(.*?)\\D+')), 
+                          gsub('^(.*?)\\D+', '', nvc_set[3*kk+1]))
+      # This finds the percentage match
+      nvc_conf <- nvc_set[3*kk+2]
+      # and adds them both to the list as one, separated by a colon
+      plot_nvc[[paste0('NVC', as.character(kk))]] <- paste(nvc_class, 
+                                                           nvc_conf,
+                                                           sep=':')
+    }
+    
+    # converting the list into a df
+    nvc_plots_df <- data.frame(plot_nvc)
     nvc_plots_list[[jj]] <- nvc_plots_df
   }
   nvc_survey <- bind_rows(nvc_plots_list) %>%
     tibble(.)
 
+  # where it fails to classify, it fills the wrong column with rubbish
   nvc_survey <- nvc_survey %>%
-    replace_with_na(replace = list(nvc1 = 'FAILED:to',
-                                   nvc2 = 'NO:species',
-                                   nvc3 = 'NANA:NA'))
-
-  #nvc_survey <- tibble(nvc_survey)
+    replace_with_na(replace = list(NVC1 = 'FAILED:to',
+                                   NVC2 = 'NO:species',
+                                   NVC3 = 'NANA:NA'))
 
   ##############################################################################
   # Getting the grimes and ellenberg info out of the mavis outputs
@@ -188,34 +188,28 @@ for (ii in 1:dim(nvc_files)[1]) {
   # consistent
   wpd$PLOT_ID <- as.character(wpd$PLOT_ID)
 
-  new_wpd <- full_join(wpd, nvc_survey)
-  new_wpd <- full_join(new_wpd, ge_survey)
+  new_wpd <- full_join(wpd, nvc_survey, by = "PLOT_ID")
+  new_wpd <- full_join(new_wpd, ge_survey, by = "PLOT_ID")
 
   # Creating the tibble which will populate the updates whole plot data sheet
-  mavis_out <- tibble(PLOT_ID = new_wpd$PLOT_ID,#paste(new_wpd$SITECODE, new_wpd$YEAR, new_wpd$PLOT_ID, sep='_'),
-                      NVC_FIRST = new_wpd$nvc1,
-                      NVC_SECOND = new_wpd$nvc2,
-                      NVC_THIRD = new_wpd$nvc3,
+  mavis_out <- tibble(SITECODE = new_wpd$SITECODE,
+                      MCODE = new_wpd$MCODE,
+                      YEAR = new_wpd$YEAR,
+                      PLOT_ID = new_wpd$PLOT_ID,#paste(new_wpd$SITECODE, new_wpd$YEAR, new_wpd$PLOT_ID, sep='_'),
                       LIGHT = as.numeric(new_wpd$light),
                       WETNESS = as.numeric(new_wpd$wetness),
                       PH = as.numeric(new_wpd$ph),
                       FERTILITY = as.numeric(new_wpd$fertility),
                       COMPETITION = as.numeric(new_wpd$competition),
                       STRESS = as.numeric(new_wpd$stress),
-                      RUDERALS = as.numeric(new_wpd$ruderals))
-
+                      RUDERALS = as.numeric(new_wpd$ruderals)) %>%
+    full_join(., nvc_survey, by = 'PLOT_ID')
+  
 
   ##############################################################################
   # replacing the sheet in excel
   #
 
-  # try just putting wpd2 into an empty excel file and saving it
-
-  wb <- createWorkbook()
-  MAVIS_sheet <- addWorksheet(wb, 'MAVIS output')
-  writeData(wb, MAVIS_sheet, mavis_out)
-
-  modifyBaseFont(wb, fontSize = 8, fontName = "Arial")
-  new_file_name <- paste(MAVIS_data, file_root, '_MAVIS_output.XLSX', sep='')
-  saveWorkbook(wb, new_file_name)
+  write.xlsx(list('MAVIS output' = mavis_out), 
+             file = paste0(MAVIS_data, file_root, '_MAVIS_output.XLSX'))
 }
