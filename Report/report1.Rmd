@@ -15,7 +15,8 @@ output:
 source('./data_prep_figure4.R')
 knitr::opts_chunk$set(echo = FALSE)
 opts_chunk$set(fig.width=8.65, fig.height=5)
-setwd('C:/Users/kiera/Work/NE_work/Report')
+warning=FALSE
+setwd('C:/Users/kiera/Work/NE_work/Report', col_types = cols())
 ```
 
 ```{r import, include=FALSE}
@@ -25,7 +26,7 @@ bb_list <- get_names('./dataframes/rename_habitat.csv')[[3]]
 bp_list <- get_names('./dataframes/rename_habitat.csv')[[4]]
 
 #df_all <- read_all_data('all_plots.csv')
-df_all <- read_csv('./dataframes/report_plots.csv')
+df_all <- read_csv('./dataframes/report_plots.csv', col_types = cols())
 site_code <- 'B14'
 
 # Taking the data from just one site
@@ -62,7 +63,7 @@ df_change <- df_site %>%
   get_change_by_year() %>%
   distinct(Plot_ID, Year, .keep_all = TRUE)
 
-hab_sum <- read_csv('./dataframes/all_plots.csv') %>%
+hab_sum <- read_csv('./dataframes/all_plots.csv', col_types = cols()) %>%
   get_hab_sums()
 
 #df_change <- rem_plot(df_change, c(14, '14', '14a')) # thursley

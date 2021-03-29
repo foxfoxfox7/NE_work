@@ -420,35 +420,13 @@ habitat_by_habitat <- function(group, count){
   
 }
 
-# # PLotting according to habitat (next to each other)
-# qq <- ggplot(df_site.bb[[1]], aes(x=BAP_broad, y=Species_richness)) +
-#   geom_boxplot()
-# print(qq)
-
 plot_ind_species <- function(plot_file, ind_file, site) {
-  # these are two parameters to pass to the read_csv to stop it fro throwing
-  # a warning
-  col_types1 <- cols(
-    .default = col_double(),
-    Plot_ID = col_character(),
-    Sitecode = col_character(),
-    BAP_broad = col_character(),
-    NVC_FIRST = col_character()
-  )
-  
-  col_types2 <- cols(
-    B36 = col_character(),
-    B12 = col_character(),
-    B14 = col_character(),
-    B15 = col_character(),
-    B25 = col_character(),
-    B26 = col_character()
-  )
-  
-  #importing the information
-  df_pc <- read_csv(plot_file, col_types = col_types1)
+
+  #importing the information. col_types = cols() takes the default and supresses
+  # the output of the guess
+  df_pc <- read_csv(plot_file, col_types = cols())
   #importint the list of indicators we want to track
-  indicators <- read_csv(ind_file, col_types = col_types2)
+  indicators <- read_csv(ind_file, col_types = cols())
   
   # these are the columns we will keep for each plot to combine with the species 
   # in the plot
