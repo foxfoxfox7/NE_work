@@ -92,7 +92,7 @@ df_dir <- './dataframes/'
 naming_cutoff <- 0.15
 
 #file_dir <- '../Data/'
-file_dir <- './Data_test/'
+file_dir <- './Data_set_change/'
 nvc_dir <- './NVC_input/'
 ge_dir <- './GE_input/'
 dat_dir <- './R_dat/'
@@ -152,6 +152,7 @@ for (ii in 1:N_files) {
     .[!is.na(.$DESC_LATIN), ]
   
   small_tib$PLOT_ID <- as.character(small_tib$PLOT_ID)
+  small_tib$PERCENT_COVER <- as.numeric(small_tib$PERCENT_COVER)
   
   ##############################################################################
   # Getting the tree species
@@ -236,7 +237,7 @@ for (ii in 1:N_files) {
 
   tree_list[[ii]] <- tree
   
-  small_tib <- full_join(small_tib, tree) %>%
+  small_tib <- full_join(small_tib, tree, by = c("PLOT_ID", "DESC_LATIN", "PERCENT_COVER")) %>%
     arrange(PLOT_ID)
   
   ##############################################################################

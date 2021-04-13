@@ -31,7 +31,7 @@ getwd()
 nvc_dir <- './NVC_output/'
 ge_dir <- './GE_output/'
 dat_dir <- './R_dat/'
-data <- './Data_test/'
+data <- './Data_set_change/'
 MAVIS_data <- './MAVIS_data/'
 
 nvc_files <- readtext(nvc_dir)
