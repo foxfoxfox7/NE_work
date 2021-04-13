@@ -1,70 +1,66 @@
-wrong_name,right_name,BAP_broad,BAP_priority,NVC_code,NVC_name
-Broadleaved Woodland,"Broadleaved, Mixed and Yew Woodland",Acid Grassland,Aquifer Fed Naturally Fluctuating Water Bodies,W,Woodland and scrub (W)
-Heathland,Dwarf Shrub Heath,Arable and Horticultural,Arable Field Margins,M,Mires (M)
-Grassland,,Bogs,Blanket Bog,H,Heath (H)
-Bog,Bogs,Boundary and Linear Features,Blue Mussel Beds on Sediment,MG,Mesotrophic grassland (MG)
-Broadleaved Woodland,"Broadleaved, Mixed and Yew Woodland","Broadleaved, Mixed and Yew Woodland",Calaminarian Grasslands,CG,Calcareous grassland (CG)
-Deciduous Woodland,"Broadleaved, Mixed and Yew Woodland",Calcareous Grassland,Carbonate Mounds,U,Calcifugus grassland and montane (U)
-Dward Shrub Heath,Dwarf Shrub Heath,Coniferous Woodland,Coastal and Floodplain Grazing Marsh,A,Aquatic communities (A)
-Fen Marsh And Swamp,"Fen, Marsh and Swamp",Dwarf Shrub Heath,Coastal Saltmarsh,S,Swamp and tall-herb ferns (S)
-Fen Marsh Or Swamp,"Fen, Marsh and Swamp","Fen, Marsh and Swamp",Coastal Sand Dunes,SM,Salt-marsh (SM)
-"Fen, Marsh & Swamp","Fen, Marsh and Swamp",Improved Grassland,Coastal Vegetated Shingle,SD,"Shingle, strandline and sand-dune (SD)"
-"Fen, Marsh, Swamp","Fen, Marsh and Swamp",Inland Rock,Cold-Water Coral Reefs,MC,Maritime cliff (MC)
-"Fen, Moor Or Bog","Fen, Marsh and Swamp",Montane Habitats,Deep-Sea Sponge Communities,OV,Vegetation of open habitats (OV)
-Lowland Heath,Dwarf Shrub Heath,Neutral Grassland,Esuarine Rocky Habitats,,
-Montane,Montane Habitats,Rivers and Streams,Eutrophic Standing Waters,,
-Montane/Upland Acid Grassland,Montane Habitats,Standing Open Waters and Canals,File Shell Beds,,
-Other,,Supralittoral Rock,Fragile Sponge and Anthozoan Communities on Subtidal Rocky Habitats,,
-Permanent Or Long-Term Grassland,,Supralittoral Sediment,Hedgerows,,
-Rough Grazing,Improved Grassland,Littoral Rock,Horse Mussel Beds,,
-Semi-Natural Grassland,Improved Grassland,Littoral Sediment,Inland Rock Outcrop and Scree Habitats,,
-,,Sublittoral Rock,Intertidal Chalk,,
-,,Sublittoral Sediment,Intertidal Mudflats,,
-,,,Intertidal Underboulder Communities,,
-,,,Limestone Pavements,,
-,,,Lowland Beech and Yew Woodland,,
-,,,Lowland Calcareous Grassland,,
-,,,Lowland Dry Acid Grassland,,
-,,,Lowland Fens,,
-,,,Lowland Heathland,,
-,,,Lowland Meadows,,
-,,,Lowland Mixed Deciduous Woodland,,
-,,,Lowland Raised Bog,,
-,,,Machair,,
-,,,Maerl Beds,,
-,,,Maritime Cliff and Slopes,,
-,,,Mesotrophic Lakes,,
-,,,Mountain Heaths and Willow Scrub,,
-,,,Mud Habitats in Deep Water,,
-,,,Native Pine Woodlands,,
-,,,Oligotrophic and Dystrophic Lakes,,
-,,,Open Mosaic Habitats on Previously Developed Land,,
-,,,Peat and Clay Exposures with Piddocks,,
-,,,Ponds,,
-,,,Purple Moor Grass and Rush Pastures,,
-,,,Reedbeds,,
-,,,Rivers,,
-,,,Sabellaria alveolata Reefs,,
-,,,Sabellaria spinulosa Reefs,,
-,,,Saline Lagoons,,
-,,,Seagrass Beds,,
-,,,Seamount Communities,,
-,,,Serpulid Reefs,,
-,,,Sheltered Muddy Gravels,,
-,,,Subtidal Chalk,,
-,,,Subtidal Sands and Gravels,,
-,,,Tide-swept Channels,,
-,,,Traditional Orchards,,
-,,,Upland Birchwoods,,
-,,,Upland Calcareous Grassland,,
-,,,"Upland Flushes, Fens and Swamps",,
-,,,Upland Hay Meadows,,
-,,,Upland Heathland,,
-,,,Upland Mixed Ashwoods,,
-,,,Upland Oakwood,,
-,,,Wet Woodland,,
-,,,Wood-Pasture and Parkland,,
-,,,Not a priority habitat,,
-,,,Not a priority habitat - Upland Acid Grassland,,
-,,,Not a priority habitat - Rough Grassland,,
-,,,Not a priority habitat - Other,,
+BAP_broad,BAP_priority,NVC_code,NVC_name,wrong_name,right_name
+Acid Grassland,Aquifer Fed Naturally Fluctuating Water Bodies,W,Woodland and scrub (W),Broadleaved Woodland,"Broadleaved, Mixed and Yew Woodland"
+Arable and Horticultural,Arable Field Margins,M,Mires (M),Heathland,Dwarf Shrub Heath
+Bogs,Blanket Bog,H,Heath (H),Grassland,
+Boundary and Linear Features,Blue Mussel Beds on Sediment,MG,Mesotrophic grassland (MG),Bog,Bogs
+"Broadleaved, Mixed and Yew Woodland",Calaminarian Grasslands,CG,Calcareous grassland (CG),Broadleaved Woodland,"Broadleaved, Mixed and Yew Woodland"
+Calcareous Grassland,Carbonate Mounds,U,Calcifugus grassland and montane (U),Deciduous Woodland,"Broadleaved, Mixed and Yew Woodland"
+Coniferous Woodland,Coastal and Floodplain Grazing Marsh,A,Aquatic communities (A),Dward Shrub Heath,Dwarf Shrub Heath
+Dwarf Shrub Heath,Coastal Saltmarsh,S,Swamp and tall-herb ferns (S),Fen Marsh And Swamp,"Fen, Marsh and Swamp"
+"Fen, Marsh and Swamp",Coastal Sand Dunes,SM,Salt-marsh (SM),Fen Marsh Or Swamp,"Fen, Marsh and Swamp"
+Improved Grassland,Coastal Vegetated Shingle,SD,"Shingle, strandline and sand-dune (SD)","Fen, Marsh & Swamp","Fen, Marsh and Swamp"
+Inland Rock,Cold-Water Coral Reefs,MC,Maritime cliff (MC),"Fen, Marsh, Swamp","Fen, Marsh and Swamp"
+Montane Habitats,Deep-Sea Sponge Communities,OV,Vegetation of open habitats (OV),"Fen, Moor Or Bog","Fen, Marsh and Swamp"
+Neutral Grassland,Esuarine Rocky Habitats,,,Lowland Heath,Dwarf Shrub Heath
+Rivers and Streams,Eutrophic Standing Waters,,,Montane,Montane Habitats
+Standing Open Waters and Canals,File Shell Beds,,,Montane/Upland Acid Grassland,Montane Habitats
+Supralittoral Rock,Fragile Sponge and Anthozoan Communities on Subtidal Rocky Habitats,,,Other,
+Supralittoral Sediment,Hedgerows,,,Permanent Or Long-Term Grassland,
+Littoral Rock,Horse Mussel Beds,,,Rough Grazing,Improved Grassland
+Littoral Sediment,Inland Rock Outcrop and Scree Habitats,,,Semi-Natural Grassland,Improved Grassland
+Sublittoral Rock,Intertidal Chalk,,,Scrub,Dense Scrub
+Sublittoral Sediment,Intertidal Mudflats,,,Other Neutral Grasslands,Other Neutral Grassland
+,Intertidal Underboulder Communities,,,Not a priority habitat - Upland Acid Grassland,Upland Acid Grassland
+,Limestone Pavements,,,Not priority habitat,Not a priority habitat
+,Lowland Beech and Yew Woodland,,,"Blanket bog, Lowland raised bog",Lowland Raised Bog
+,Lowland Calcareous Grassland,,,Dwarf shrub heath/ Upland acid grassland,Upland Heathland
+,Lowland Dry Acid Grassland,,,,
+,Lowland Fens,,,,
+,Lowland Heathland,,,,
+,Lowland Meadows,,,,
+,Lowland Mixed Deciduous Woodland,,,,
+,Lowland Raised Bog,,,,
+,Machair,,,,
+,Maerl Beds,,,,
+,Maritime Cliff and Slopes,,,,
+,Mesotrophic Lakes,,,,
+,Mountain Heaths and Willow Scrub,,,,
+,Mud Habitats in Deep Water,,,,
+,Native Pine Woodlands,,,,
+,Oligotrophic and Dystrophic Lakes,,,,
+,Open Mosaic Habitats on Previously Developed Land,,,,
+,Peat and Clay Exposures with Piddocks,,,,
+,Ponds,,,,
+,Purple Moor Grass and Rush Pastures,,,,
+,Reedbeds,,,,
+,Rivers,,,,
+,Sabellaria alveolata Reefs,,,,
+,Sabellaria spinulosa Reefs,,,,
+,Saline Lagoons,,,,
+,Seagrass Beds,,,,
+,Seamount Communities,,,,
+,Serpulid Reefs,,,,
+,Sheltered Muddy Gravels,,,,
+,Subtidal Chalk,,,,
+,Subtidal Sands and Gravels,,,,
+,Tide-swept Channels,,,,
+,Traditional Orchards,,,,
+,Upland Birchwoods,,,,
+,Upland Calcareous Grassland,,,,
+,"Upland Flushes, Fens and Swamps",,,,
+,Upland Hay Meadows,,,,
+,Upland Heathland,,,,
+,Upland Mixed Ashwoods,,,,
+,Upland Oakwood,,,,
+,Wet Woodland,,,,
+,Wood-Pasture and Parkland,,,,

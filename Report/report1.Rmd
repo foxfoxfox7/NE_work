@@ -16,7 +16,7 @@ source('./data_prep_figure4.R')
 knitr::opts_chunk$set(echo = FALSE)
 opts_chunk$set(fig.width=8.65, fig.height=5)
 warning=FALSE
-setwd('C:/Users/kiera/Work/NE_work/Report', col_types = cols())
+setwd('C:/Users/kiera/Work/NE_work/Report')
 ```
 
 ```{r import, include=FALSE}
@@ -25,31 +25,137 @@ name_swap_nvc <- get_names('./dataframes/rename_habitat.csv')[[2]]
 bb_list <- get_names('./dataframes/rename_habitat.csv')[[3]]
 bp_list <- get_names('./dataframes/rename_habitat.csv')[[4]]
 
-#df_all <- read_all_data('all_plots.csv')
-df_all <- read_csv('./dataframes/report_plots.csv', col_types = cols())
-site_code <- 'B14'
+df_all <- read_csv('./dataframes/report_plots.csv', col_types = cols()) %>%
+  fix_df(., name_swap_bap)
+
+# for getting teh averages of each habitat
+all_plots <- read_csv('./dataframes/all_plots.csv', col_types = cols()) %>%
+  fix_df(., name_swap_bap)
+
+hab_sum_bb <- get_hab_sums(all_plots, 'BAP_broad')
+hab_sum_bp <- get_hab_sums(all_plots, 'BAP_priority')
+hab_sum_n <- get_hab_sums(all_plots, 'NVC_habitat')
+```
+
+```{r site_choice, include=FALSE}
+
+################################################################################
+# Ingleborough
+################################################################################
+
+# site_code <- 'B12'
+# 
+# # Taking the data from just one site
+# df_site <- filter(df_all, Sitecode == site_code) %>%
+#   transform_coords(.) %>%
+#   distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
+# 
+# # Making the sub dataframes with only the major habitats selected
+# #object[[1]] is the data frame. object[[2]] is the list of habitats
+# df_site.bb <- select_by(df_site, 'BAP_broad', 15)
+# df_site.bp <- select_by(df_site, 'BAP_priority', 15)
+# df_site.nvc <- select_by(df_site, 'NVC_habitat', 15)
+
+################################################################################
+# Lower Derwent Valley
+################################################################################
+
+# site_code <- 'B36'
+# 
+# # Taking the data from just one site
+# df_site <- filter(df_all, Sitecode == site_code) %>%
+#   transform_coords(.) %>%
+#   distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
+# 
+# # Making the sub dataframes with only the major habitats selected
+# #object[[1]] is the data frame. object[[2]] is the list of habitats
+# df_site.bb <- select_by(df_site, 'BAP_broad', 15)
+# df_site.bp <- select_by(df_site, 'BAP_priority', 15)
+# df_site.nvc <- select_by(df_site, 'NVC_habitat', 15)
+
+################################################################################
+# Lullington
+################################################################################
+# 
+# site_code <- 'B14'
+# 
+# # Taking the data from just one site
+# df_site <- filter(df_all, Sitecode == site_code) %>%
+#   transform_coords(.) %>%
+#   distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
+# 
+# df_site <- rem_plot(df_site, c(30, '30', '30a')) # Lullington
+# 
+# # Making the sub dataframes with only the major habitats selected
+# #object[[1]] is the data frame. object[[2]] is the list of habitats
+# df_site.bb <- select_by(df_site, 'BAP_broad', 700, 
+#                         include = c('Calcareous Grassland', 'Dwarf Shrub Heath'))
+# df_site.bp <- select_by(df_site, 'BAP_priority', 700, 
+#                         include = c('Lowland Calcareous Grassland', 'Lowland Heathland'))
+# df_site.nvc <- select_by(df_site, 'NVC_habitat', 500, 
+#                          include = c('Calcareous grassland (CG)', 'Heath (H)'))
+
+################################################################################
+# Martin Down
+################################################################################
+
+# site_code <- 'B15'
+# 
+# # Taking the data from just one site
+# df_site <- filter(df_all, Sitecode == site_code) %>%
+#   transform_coords(.) %>%
+#   distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
+# 
+# #df_site <- rem_plot(df_site, c(30, '30', '30a')) # Lullington
+# 
+# # Making the sub dataframes with only the major habitats selected
+# #object[[1]] is the data frame. object[[2]] is the list of habitats
+# df_site.bb <- select_by(df_site, 'BAP_broad', 15)
+# df_site.bp <- select_by(df_site, 'BAP_priority', 15)
+# df_site.nvc <- select_by(df_site, 'NVC_habitat', 15)
+
+################################################################################
+# Stiperstones
+################################################################################
+
+# site_code <- 'B25'
+# 
+# # Taking the data from just one site
+# df_site <- filter(df_all, Sitecode == site_code) %>%
+#   transform_coords(.) %>%
+#   distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
+# 
+# df_site <- rem_plot(df_site, c(31, '31', '31a'))
+# 
+# # Making the sub dataframes with only the major habitats selected
+# #object[[1]] is the data frame. object[[2]] is the list of habitats
+# df_site.bb <- select_by(df_site, 'BAP_broad', 14)
+# df_site.bp <- select_by(df_site, 'BAP_priority', 14)
+# df_site.nvc <- select_by(df_site, 'NVC_habitat', 14)
+
+################################################################################
+# Thursley
+################################################################################
+
+site_code <- 'B26'
 
 # Taking the data from just one site
 df_site <- filter(df_all, Sitecode == site_code) %>%
-  fix_names(., name_swap_bap) %>%
-  # transform the eastings and northings into latitude and longitude
   transform_coords(.) %>%
   distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
 
-
-# Converts the NVC abbreviations to the full names
-df_site$NVC_habitat <- name_swap(df_site$NVC_habitat, name_swap_nvc)
-df_site$Year <- as.character(df_site$Year)
-
-df_site <- rem_plot(df_site, c(30, '30', '30a')) # Lullington
-#df_site <- rem_plot(df_site, c(14, '14', '14a')) # thursley
+df_site <- rem_plot(df_site, c(14, '14', '14a')) # thursley
 
 # Making the sub dataframes with only the major habitats selected
 #object[[1]] is the data frame. object[[2]] is the list of habitats
-df_site.bb <- select_by(df_site, 'BAP_broad', 700, include = c('Calcareous Grassland', 'Dwarf Shrub Heath'))
+df_site.bb <- select_by(df_site, 'BAP_broad', 15)#,
+                        #include = c('Calcareous Grassland', 'Dwarf Shrub Heath'))
 df_site.bp <- select_by(df_site, 'BAP_priority', 15)
-df_site.nvcb <- select_by(df_site, 'NVC_group', 15)
-df_site.nvcc <- select_by(df_site, 'NVC_habitat', 500, include = c('Calcareous grassland (CG)', 'Heath (H)'))
+df_site.nvc <- select_by(df_site, 'NVC_habitat', 15)#,
+                         #include = c('Calcareous grassland (CG)', 'Heath (H)'))
+```
+
+```{r site_specific, include=FALSE}
 
 # the centre points of the maps
 east_cent <- get_centre_coords(df_site)[[1]]
@@ -63,10 +169,6 @@ df_change <- df_site %>%
   get_change_by_year() %>%
   distinct(Plot_ID, Year, .keep_all = TRUE)
 
-hab_sum <- read_csv('./dataframes/all_plots.csv', col_types = cols()) %>%
-  get_hab_sums()
-
-#df_change <- rem_plot(df_change, c(14, '14', '14a')) # thursley
 ```
 
 ## 
@@ -85,10 +187,17 @@ The sites of the LTMN project have been chosen to represent key Biodiversity Act
 
 Currently we do not present BAP priority habitats as there is too much missing data, but the broad habitat gives a good indication of what the environment at the plot level looks like to the surveyor.
 
-### BAP broad habitats
+### BAP habitats
 
-```{r Bap_habitat}
-map_hab_by_year(df_site, 'BAP_broad', 'BAP_priority')#df_site.bb[[1]]
+##### BAP priority habitats
+```{r Bap_p_habitat}
+df_site_priority <- filter(df_site, BAP_priority != 'Not A Priority Habitat')
+map_hab_by_year(df_site_priority, 'BAP_priority', 'BAP_priority')#df_site.bb[[1]]
+```
+
+##### BAP broad habitats
+```{r Bap_b_habitat}
+map_hab_by_year(df_site, 'BAP_broad', 'BAP_broad')#df_site.bb[[1]]
 ```
 
 Each circle on the map represents a plot or quadrat. The locations of the plots are recorded so that they can be reused for each survey. This means plots can be compared from year to year and changes are likely due to changing habitat. The exact location is recorded using feno markers placed in the ground. Sometimes these are lost between surveys and in such cases, the coordinates are used to roughly match the location. This can mean that sometimes the plots move a couple of metres. In some cases, not all plots are surveyed each time, typically due to time restraints on the survey.
@@ -102,11 +211,11 @@ There are usually a mix of habitats on LTMN sites with certain habitats being mo
 
 ### NVC habitats
 
-After the species data has been collected for each plot, it is processed using MAVIS software which uses the plants and plant abundance to categorise the plots into their NVC habitat classifications. It should be noted that accurate categorisation is often difficult due to sites having a mix of habitats and transitions between them. For this reason the categorisation is given a confidence percentage which is shown when hovering the mouse over the data points on the map below.
+After the species data has been collected for each plot, it is processed using MAVIS software which uses the plants and plant abundance to categorise the plots into their NVC habitat classifications. It should be noted that accurate categorisation is often difficult due to sites having a mix of habitats and transitions between them. For this reason the categorisation is given a confidence percentage which is shown when hovering the mouse over the data points on the map below along with the NVC subgroup (subgroup:confidence).
 
 ```{r NVC_habitats}
-#map_hab_by_year(df_site.nvcc[[1]], 'NVC_habitat', 'NVC_FIRST')
-map_hab_by_year(df_site, 'NVC_habitat', 'NVC_FIRST')
+#map_hab_by_year(df_site.nvc[[1]], 'NVC_habitat', 'NVC1')
+map_hab_by_year(df_site, 'NVC_habitat', 'NVC1')
 ```
 
 Each circle on the map represents a plot or quadrat. The locations of the plots are recorded so that they can be reused for each survey. This means plots can be compared from year to year and changes are likely due to changing habitat. The exact location is recorded using feno markers placed in the ground. Sometimes these are lost between surveys and in such cases, the coordinates are used to roughly match the location. This can mean that sometimes the plots move a couple of metres. In some cases, not all plots are surveyed each time, typically due to time restraints on the survey.
@@ -151,7 +260,7 @@ The centre line of the box is the median value across all plots designated as th
 ```
 
 ```{r tot_av_spec_rich}
-display_averages(hab_sum, 'Species_richness')
+display_averages(hab_sum_bb, 'Species_richness')
 ```
 
 ##### Map of change in species richness
@@ -179,7 +288,7 @@ The distribution of the plot diversity scores across the major BAP broad habitat
 ```
 
 ```{r tot_av_spec_div}
-display_averages(hab_sum, 'Species_diversity')
+display_averages(hab_sum_bb, 'Species_diversity')
 ```
 
 ##### Map of change in species diversity
@@ -198,7 +307,7 @@ plot_ind_species('./dataframes/all_species_pc.csv',
                  site_code)
 ```
 
-Hover the mouse over each line to get details. Click on species in the legend to add and remove them from the view.
+Hover the mouse over each line to get details. Click on species in the legend to add and remove them from the view. Double click to isolate a species.
 
 ## Vegetation structure {.tabset .tabset-fade}
 
@@ -227,7 +336,7 @@ The distribution of the plot vegetation height averages across the major BAP bro
 ```
 
 ```{r tot_av_veg_height}
-display_averages(hab_sum, 'Vegetation_height')
+display_averages(hab_sum_bb, 'Vegetation_height')
 ```
 
 ##### Map of change in vegetatation height
@@ -256,7 +365,7 @@ The distribution of the litter presence scores across the major BAP broad habita
 ```
 
 ```{r tot_av_Litter}
-display_averages(hab_sum, 'Litter')
+display_averages(hab_sum_bb, 'Litter')
 ```
 
 ##### Map of change in presence of litter
@@ -284,7 +393,7 @@ The distribution of the bare ground presence scores across the major BAP broad h
 ```
 
 ```{r tot_av_bare}
-display_averages(hab_sum, 'Bare_ground')
+display_averages(hab_sum_bb, 'Bare_ground')
 ```
 
 ##### Map of change in presence of bare ground
@@ -326,7 +435,7 @@ The distribution of the 'light' values across the major BAP broad habitats. The 
 ```
 
 ```{r tot_av_light}
-display_averages(hab_sum, 'Light')
+display_averages(hab_sum_bb, 'Light')
 ```
 
 ##### Map of change in light scores
@@ -354,7 +463,7 @@ The distribution of the 'fertility' values across the major BAP broad habitats. 
 ```
 
 ```{r tot_av_fertility}
-display_averages(hab_sum, 'Fertility')
+display_averages(hab_sum_bb, 'Fertility')
 ```
 
 ##### Map of change in fertility scores
@@ -382,7 +491,7 @@ The distribution of the 'pH' values across the major BAP broad habitats. The cen
 ```
 
 ```{r tot_av_ph}
-display_averages(hab_sum, 'pH')
+display_averages(hab_sum_bb, 'pH')
 ```
 
 ##### Map of change in pH scores
@@ -410,7 +519,7 @@ The distribution of the 'wetness' values across the major BAP broad habitats. Th
 ```
 
 ```{r tot_av_wetness}
-display_averages(hab_sum, 'Wetness')
+display_averages(hab_sum_bb, 'Wetness')
 ```
 
 ##### Map of change in wetness scores
@@ -450,7 +559,7 @@ The distribution of the 'competition' values across the major BAP broad habitats
 ```
 
 ```{r tot_av_comp}
-display_averages(hab_sum, 'Competition')
+display_averages(hab_sum_bb, 'Competition')
 ```
 
 ##### Map of change in competition scores
@@ -478,7 +587,7 @@ The distribution of the 'stress' values across the major BAP broad habitats. The
 ```
 
 ```{r tot_av_stress}
-display_averages(hab_sum, 'Stress')
+display_averages(hab_sum_bb, 'Stress')
 ```
 
 ##### Map of change in stress scores
@@ -506,7 +615,7 @@ The distribution of the 'ruderals' values across the major BAP broad habitats. T
 ```
 
 ```{r tot_av_ruderals}
-display_averages(hab_sum, 'Ruderals')
+display_averages(hab_sum_bb, 'Ruderals')
 ```
 
 ##### Map of change in ruderal scores

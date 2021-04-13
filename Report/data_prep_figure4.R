@@ -45,8 +45,8 @@ get_names <- function(file_name) {
   name_swap <- read.csv(file_name)
   
   name_swap_bap <- with(name_swap, setNames(right_name, wrong_name))
-  name_swap_bap <- name_swap_bap[!is.na(name_swap_bap)]
-  name_swap_bap <- name_swap_bap[name_swap_bap != ""]
+  # name_swap_bap <- name_swap_bap[!is.na(name_swap_bap)]
+  # name_swap_bap <- name_swap_bap[name_swap_bap != ""]
   
   name_swap_nvc <- with(name_swap, setNames(NVC_name, NVC_code))
   name_swap_nvc <- name_swap_nvc[!is.na(name_swap_nvc)]
@@ -83,28 +83,32 @@ rename <- function(input, list_comp, naming_cutoff=0.2) {
       new_name <- list_comp[which.min(list_of_matches)]
       return(new_name)
     } else {
-      return(NA)
+      return(input)
     }
   } else {
     return(input)
   }
 }
 
-fix_names <- function(df, name_swap_vector) {
+fix_df <- function(df, name_swap_vector) {
 
-  # Replacing know errors with the correct versions
-  # (when they are too far away from the correct version for the auto to do it)
-  # for (jj in 1:length(name_swap_vector)) {
-  #   df$BAP_broad <- replace(
-  #     df$BAP_broad,
-  #     df$BAP_broad == names(name_swap_vector[jj]), name_swap_vector[jj])
-  # }
-  df$BAP_broad <- name_swap(df$BAP_broad, name_swap_vector)
+  df[['BAP_broad']] <- mapvalues(df[['BAP_broad']],
+                                 names(name_swap_vector),
+                                 unlist(name_swap_vector),
+                                 warn_missing = FALSE)
+  df[['BAP_priority']] <- mapvalues(df[['BAP_priority']],
+                                    names(name_swap_vector),
+                                    unlist(name_swap_vector),
+                                    warn_missing = FALSE)
 
   # Renaming any typos in the bap habitats and changing to NA when they don't
   # match our list of habitats
   df$BAP_broad <- unname(sapply(df$BAP_broad, rename, list_comp=bb_list))
   df$BAP_priority <- unname(sapply(df$BAP_priority, rename, list_comp=bp_list))
+  
+  df$NVC_habitat <- name_swap(df$NVC_habitat, name_swap_nvc)
+  df$Year <- as.character(df$Year)
+  #df$PLOT_ID <- as.character(df$PLOT_ID)
 
   
   return(df)
@@ -261,22 +265,22 @@ get_change_by_year <- function(df) {
   return(total_change)
 }
 
-get_hab_sums <- function(df) {
+get_hab_sums <- function(df, habitat) {
   av_cols <- c('Species_richness', 'Species_diversity', 'Light', 'Fertility',
                'pH', 'Wetness', 'Stress', 'Competition', 'Ruderals', 
                'Vegetation_height', 'Litter', 'Bare_ground')
   
   df[ ,av_cols][is.na(df[ ,av_cols])] <- 0
+
   
-  df <- df %>%
-    fix_names(., name_swap_bap)
   
-  all_habs <- unique(df$BAP_broad)
+  all_habs <- unique(df[[habitat]])
   
   hab_summary_list = list()
   for (ii in 1:length(all_habs)) {
     df_hab <- df %>%
-      filter(BAP_broad == all_habs[ii])
+      #filter(BAP_broad == all_habs[ii])
+      filter(.[[habitat]] == all_habs[ii])
     
     hab_av <- summarize_all(df_hab[, av_cols], mean)
     hab_av$Habitat <- all_habs[ii]
@@ -392,12 +396,9 @@ habitat_by_habitat <- function(group, count){
   } else if (group == 'BAP_priority') {
     df <- df_site.bp[[1]]
     hab_list <- df_site.bp[[2]]
-  } else if (group == 'NVC_group') {
-    df <- df_site.nvcb[[1]]
-    hab_list <- df_site.nvcb[[2]]
   } else if (group == 'NVC_habitat') {
-    df <- df_site.nvcc[[1]]
-    hab_list <- df_site.nvcc[[2]]
+    df <- df_site.nvc[[1]]
+    hab_list <- df_site.nvc[[2]]
   } else {
     print('Habitat grouping not recognised')
   }
