@@ -159,23 +159,28 @@ all_spec <- list("All species" = sort(unique(as.vector(unlist(site_list)))))
 # Fixing the names
 ################################################################################
 
-all_spec[[1]] <- all_spec[[1]] %>%
-  map_chr(append_str, ' sp.') %>%
-  map_chr(append_str2, ' sp', '.') %>%
-  unique() %>%
-  mapvalues(name_swap[['wrong_name']], name_swap[['right_name']], warn_missing = FALSE)
-
-site_list2 <- site_list %>%
+all_spec <- all_spec %>%
   lapply(map_chr, append_str, ' sp.') %>%
   lapply(map_chr, append_str2, ' sp', '.') %>%
   lapply(unique) %>%
-  lapply(mapvalues, name_swap[['wrong_name']], name_swap[['right_name']], warn_missing = FALSE)
+  lapply(mapvalues, name_swap[['wrong_name']], name_swap[['right_name']], warn_missing = FALSE) %>%
+  lapply(function(z){ z[!is.na(z) & z != "" & z != "Unidentified" & z != "Unidentified sp."]})
+
+site_list <- site_list %>%
+  lapply(map_chr, append_str, ' sp.') %>%
+  lapply(map_chr, append_str2, ' sp', '.') %>%
+  lapply(unique) %>%
+  lapply(mapvalues, name_swap[['wrong_name']], name_swap[['right_name']], warn_missing = FALSE) %>%
+  lapply(function(z){ z[!is.na(z) & z != "" & z != "Unidentified" & z != "Unidentified sp."]}) %>%
+  lapply(sort)
 
 survey_list <- survey_list %>%
   lapply(map_chr, append_str, ' sp.') %>%
   lapply(map_chr, append_str2, ' sp', '.') %>%
   lapply(unique) %>%
-  lapply(mapvalues, name_swap[['wrong_name']], name_swap[['right_name']], warn_missing = FALSE)
+  lapply(mapvalues, name_swap[['wrong_name']], name_swap[['right_name']], warn_missing = FALSE) %>%
+  lapply(function(z){ z[!is.na(z) & z != "" & z != "Unidentified" & z != "Unidentified sp."]}) %>%
+  lapply(sort)
 
 survey_list_full <- survey_list_full %>%
   lapply(map_chr, append_str, ' sp.') %>%
@@ -192,15 +197,16 @@ survey_list_full <- survey_list_full %>%
 
 # Converts our lists of lists to dataframes and fills in the gaps left by
 # the different sized lists with blanks
+all_spec_df <- data.frame(all_spec)
 site_list_df <- data.frame(lapply(site_list, "length<-", max(lengths(site_list))))
 survey_list_df <- data.frame(lapply(survey_list, "length<-", max(lengths(survey_list))))
-survey_list_df <- data.frame(lapply(survey_list_full, "length<-", max(lengths(survey_list_full))))
+survey_list_full_df <- data.frame(lapply(survey_list_full, "length<-", max(lengths(survey_list_full))))
 
 # creates a list of all our information ready to go into the excel file
-species_sheets <- list(All_species = all_spec,
+species_sheets <- list(All_species = all_spec_df,
                        Sites = site_list_df,
                        Surveys_unique = survey_list_df,
-                       Surveys = survey_list_df)
+                       Surveys = survey_list_full_df)
 
 write.xlsx(species_sheets, file = "Species_lists.xlsx")
 
