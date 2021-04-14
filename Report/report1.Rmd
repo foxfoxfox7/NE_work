@@ -1,5 +1,5 @@
 ---
-title: "Lullington Heath: a Long-Term Monitoring Network report"
+title: "Martin Down: a Long-Term Monitoring Network report"
 #author: "Kieran Fox"
 #date: "22/02/2021"
 #output: html_document
@@ -99,20 +99,20 @@ hab_sum_n <- get_hab_sums(all_plots, 'NVC_habitat')
 # Martin Down
 ################################################################################
 
-# site_code <- 'B15'
-# 
-# # Taking the data from just one site
-# df_site <- filter(df_all, Sitecode == site_code) %>%
-#   transform_coords(.) %>%
-#   distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
-# 
-# #df_site <- rem_plot(df_site, c(30, '30', '30a')) # Lullington
-# 
-# # Making the sub dataframes with only the major habitats selected
-# #object[[1]] is the data frame. object[[2]] is the list of habitats
-# df_site.bb <- select_by(df_site, 'BAP_broad', 15)
-# df_site.bp <- select_by(df_site, 'BAP_priority', 15)
-# df_site.nvc <- select_by(df_site, 'NVC_habitat', 15)
+site_code <- 'B15'
+
+# Taking the data from just one site
+df_site <- filter(df_all, Sitecode == site_code) %>%
+  transform_coords(.) %>%
+  distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
+
+#df_site <- rem_plot(df_site, c(30, '30', '30a')) # Lullington
+
+# Making the sub dataframes with only the major habitats selected
+#object[[1]] is the data frame. object[[2]] is the list of habitats
+df_site.bb <- select_by(df_site, 'BAP_broad', 15)
+df_site.bp <- select_by(df_site, 'BAP_priority', 15)
+df_site.nvc <- select_by(df_site, 'NVC_habitat', 15)
 
 ################################################################################
 # Stiperstones
@@ -137,22 +137,20 @@ hab_sum_n <- get_hab_sums(all_plots, 'NVC_habitat')
 # Thursley
 ################################################################################
 
-site_code <- 'B26'
-
-# Taking the data from just one site
-df_site <- filter(df_all, Sitecode == site_code) %>%
-  transform_coords(.) %>%
-  distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
-
-df_site <- rem_plot(df_site, c(14, '14', '14a')) # thursley
-
-# Making the sub dataframes with only the major habitats selected
-#object[[1]] is the data frame. object[[2]] is the list of habitats
-df_site.bb <- select_by(df_site, 'BAP_broad', 15)#,
-                        #include = c('Calcareous Grassland', 'Dwarf Shrub Heath'))
-df_site.bp <- select_by(df_site, 'BAP_priority', 15)
-df_site.nvc <- select_by(df_site, 'NVC_habitat', 15)#,
-                         #include = c('Calcareous grassland (CG)', 'Heath (H)'))
+# site_code <- 'B26'
+# 
+# # Taking the data from just one site
+# df_site <- filter(df_all, Sitecode == site_code) %>%
+#   transform_coords(.) %>%
+#   distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
+# 
+# df_site <- rem_plot(df_site, c(14, '14', '14a')) # thursley
+# 
+# # Making the sub dataframes with only the major habitats selected
+# #object[[1]] is the data frame. object[[2]] is the list of habitats
+# df_site.bb <- select_by(df_site, 'BAP_broad', 15)
+# df_site.bp <- select_by(df_site, 'BAP_priority', 15)
+# df_site.nvc <- select_by(df_site, 'NVC_habitat', 15)
 ```
 
 ```{r site_specific, include=FALSE}
