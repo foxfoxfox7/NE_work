@@ -2,7 +2,7 @@
 ##########Setup##############
 #############################
 
-laptop_dir <- 'C:/Users/kiera/Work/NE_work/'
+laptop_dir <- 'C:/Users/kiera/Work/NE_work/Vegetation/NBN/'
 setwd(laptop_dir)
 
 library('openxlsx')
@@ -16,7 +16,7 @@ library('zoo')
 
 #Load plot and species data ensuring it matches template
 
-file_name <- 'Ingleborough_LTMN_Vegetation_2010_MAVIS.XLSX'
+file_name <- '../Data/Data_set/Ingleborough_LTMN_Vegetation_2010_MAVIS.XLSX'
 
 plots <- read.xlsx(file_name, sheet = 2, skipEmptyRows = TRUE)
 species <- read.xlsx(file_name, sheet = 3, skipEmptyRows = TRUE)
