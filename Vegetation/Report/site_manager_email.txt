@@ -1,0 +1,23 @@
+﻿Hi ‘site manager’
+
+
+Please find attached an Long -Term Monitoring Network (LTMN) report on the site ‘site’.
+
+
+LTMN has been monitoring for 12 years now and while our aim is to look for change on a much longer time-scale than that, we are gathering a lot of useful information. We wanted to make that available so have drafted up site reports for each of the LTMN sites. The report comes in the form of an HTML page which you can open with any internet browser. It is offline but we have used this format as it means we can include interactive maps and figures. If you have any issues with maps not loading, refreshing the page will fix them.
+
+
+In future we will be adding the information from each survey to this report and making it available immediately after a QA process. We expect that the contents of the report may change over time and want to tailor it to each individual site so we have some questions to help us make these reports as useful as possible. This is still a work in progress and we also plan to include data from the other protocols over time (soil, air, butterfly) where appropriate.
+
+
+What are the habitats that management hopes to protect or enhance?
+What plant species could be used to measure the quality and extent of these habitats?
+Are there any changes happening at this site that would be interesting to monitor?
+Have there been any significant shifts in management over the time this site has been monitored?
+How well do our results match what you know to be happening on the site?
+
+
+We are also really keen to integrate our monitoring with any other forms of monitoring that may be happening at the site (e.g. moths, lichens). Do you know of any programmes that are currently being run or if there is any intention to do some specific monitoring? Now that we are getting three surveys for many of the sites we want to start making the data as useful as possible. Please let us know if there is anything specific at this site we could focus our analysis on.
+
+
+Finally, feel free to contact me or any of the LTMN team for any clarification on the report. We would be really happy to help and would greatly value any feedback.
