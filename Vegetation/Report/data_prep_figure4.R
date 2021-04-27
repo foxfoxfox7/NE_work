@@ -1,19 +1,24 @@
+library(plyr)
+library(janitor)
+library(reshape)
 library(stringdist)
 library(readxl)
+
 library(leaflet)
+library(mapview)
+library(colorspace)
+library(RColorBrewer)
+
+library(raster)
 library(sp)
 library(rgdal)
-library(plyr)
-library(mapview)
-library(janitor)
+
 library(knitr)
-library(reshape)
-library(colorspace)
 library(kableExtra)
 library(widgetframe)
 library(visNetwork, quietly = TRUE)
 library(ggthemes)
-library(RColorBrewer)
+
 library(tidyverse)
 
 ################################################################################
@@ -163,6 +168,23 @@ transform_coords <- function(df) {
   return(df2)
 }
 
+EastNorth_to_LongLat <- function(df) {
+  df_plot <- df
+  
+  bng_proj <- '+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 
+  +x_0=400000 +y_0=-100000 +ellps=airy
+  +towgs84=446.448,-125.157,542.06,0.15,0.247,0.842,-20.489 +units=m +no_defs'
+  
+  coordinates(df_plot) <- c("Eastings", "Northings")
+  proj4string(df_plot) <- projection(bng_proj)
+  plotsWGS <- spTransform(df_plot, projection("+proj=longlat +datum=WGS84"))
+  
+  df$Longitude <- plotsWGS@coords[,1]
+  df$Latitude <- plotsWGS@coords[,2]
+  
+  return(df)
+}
+
 get_centre_coords <- function(df) {
   # Finding the centre point of the site
   east_min <- min(df[!is.na(df[ ,'Longitude']),][ ,'Longitude'])
@@ -190,7 +212,7 @@ get_change_by_year <- function(df) {
   for (ii in 1:length(unique_years)) {
     df_year <- df %>%
       filter(Year == unique_years[ii]) %>%
-      select(all_of(track_cols), all_of(change_cols))
+      dplyr::select(all_of(track_cols), all_of(change_cols))
 
     # Adding the year to the column so we can put different years in the same row
     year_marker <- unique_years[ii]
@@ -322,7 +344,7 @@ display_averages <- function(df, feature) {
 display_survey_dates <- function(df) {
 
   df_dates <- df %>%
-    select(Year, Date) %>%
+    dplyr::select(Year, Date) %>%
     group_by(Year) %>%
     summarise(
       Earliest_date = min(Date, na.rm = T),
