@@ -1,8 +1,11 @@
+library(forecast)
+library(xts)
+library(SimilarityMeasures)
+library(TSdist)
+
 
 setwd('C:/Users/kiera/Work/NE_work/Weather/collate_data/')
 source('./collate_funcs.R')
-
-
 
 ################################################################################
 # Ainsdale
@@ -13,7 +16,7 @@ file_n <- "Ainsdale QA.xlsx"
 file_n2 <- "LTMN_AWS_Ainsdale_raw_data.xlsx"
 
 df_ains <- from_raw(paste0(data_ains, file_n2)) %>%
-  convert_daily()
+  convert_daily2()
 
 ################################################################################
 # Bure marshes
@@ -29,7 +32,7 @@ df2 <- from_camp2(paste0(data_bure, file_in), 'B01')
 
 weather_list <- list(df1, df2)
 df_bure <- combine_weather_hourly(weather_list) %>%
-  convert_daily()
+  convert_daily2()
 
 ################################################################################
 # Burnham Beeches
@@ -43,55 +46,6 @@ df_bb <- from_raw(paste0(data_bb, file_in)) %>%
 
 df_bb[(!is.na(df_bb$rain_sum)) & (df_bb$rain_sum > 1000), 'rain_sum'] <- NA
 
-
-convert_daily2 <- function(df) {
-  
-  #DO EACH ONE INDIVIDUALLY
-  # REMOVE THE NA FIRST
-  # THEN COMBINE
-  
-  df_temp <- df %>%
-    subset(!is.na(air_temp)) %>%
-    group_by(date(date)) %>% 
-    summarise(max_temp = max(air_temp),
-              min_temp = min(air_temp))
-  
-  df_rain <- df %>%
-    subset(!is.na(rain_sum)) %>%
-    group_by(date(date)) %>% 
-    summarise(rain_sum = sum(rain_mm))
-  
-  df_daily_data <- full_join(df_temp, df_rain)
-  colnames(df_daily_data)[1] <- 'date'
-  
-  
-  # df_daily_data[df_daily_data$max_temp == -Inf, 2:ncol(df_daily_data)] <- NA
-  # df_daily_data[df_daily_data$max_temp == -Inf, c('max_temp', 'min_temp')] <- NA
-  
-  #changing NO_DATA to NA so it can be omitted in the calcualtions
-  # has to be converted to dataframe so chr col can be turned to logical....
-  df <- data.frame(df)
-  df[df$data_source == 'NO_DATA', 'data_source'] <- NA
-  
-  df_daily_id <- df %>% 
-    group_by(date(date)) %>% 
-    dplyr::summarise(
-      site = dplyr::first(site),
-      data_source = dplyr::first(na.omit(data_source)))
-  colnames(df_daily_id)[1] <- 'date'
-  
-  # changing the NA data source back to NO_DATA
-  df_daily_id[is.na(df_daily_id$data_source), 'data_source'] <- 'NO_DATA'
-  
-  df_daily <- full_join(df_daily_id, df_daily_data)
-  
-  # reenters the missing data on rainsum as NA instead of 0 (Na were ignored above)
-  #df_daily[df_daily$data_source == 'NO_DATA', 'rain_sum'] <- NA
-  
-  return(df_daily)
-}
-
-
 ################################################################################
 # Cross Fell
 ################################################################################
@@ -101,7 +55,7 @@ data_ceh <- 'CEH/'
 
 cf1 <- 'moorh for NE.CSV'
 df_cross1 <- from_cosmos_collate(paste0(data_cross, cf1), 'B50') %>%
-  convert_daily()
+  convert_daily2()
 
 cf2 <- 'MOORH_MAY_2017.xlsx'
 df_cross2 <- from_cosmos_month_excel(paste0(data_cross, cf2), 'B50')
@@ -125,6 +79,7 @@ for (ii in 1:length(list_of_files)) {
 
 # combining the various months with the rest of the data we have
 df_cross <- combine_weather_daily(c(cross_list1, list_cross))
+df_cross[['date']] <- as.Date(df_cross[['date']])
 
 ################################################################################
 # Ingleborough
@@ -135,11 +90,11 @@ camp <- 'camp2/'
 
 ing1 <- 'LTMN_AWS_ Data_Ingleborough 05-14.XLSX'
 df_ing1 <- from_aws(paste0(data_ing, ing1)) %>%
-  convert_daily()
+  convert_daily2()
 
 ing2 <- 'MO AWS to Aug 2016 - processed weather data 03-15 08-16.CSV'
 df_ing2 <- from_aws_processed2(paste0(data_ing, ing2), 'B12') %>%
-  convert_daily()
+  convert_daily2()
 
 individual_list_ing <- list(df_ing1, df_ing2)
 
@@ -150,7 +105,7 @@ for (ii in 1:length(list_of_files)) {
   
   file_path <- paste0(data_ing, camp, list_of_files[ii])
   df <- from_camp2(file_path, 'B12') %>%
-    convert_daily()
+    convert_daily2()
   list_ing[[ii]] <- df
 }
 
@@ -164,11 +119,11 @@ data_liz <- '../Data/Lizard/'
 
 liz1 <- 'LIZ_MO_AWS_version1_and_version0_combined.xlsx'
 df_liz1 <- from_aws_processed2(paste0(data_liz, liz1), 'B40', excel=TRUE) %>%
-  convert_daily()
+  convert_daily2()
 
 liz2 <- 'LTMN_AWS_The_Lizard_raw_data.xlsx'
 df_liz2 <- from_raw(paste0(data_liz, liz2)) %>%
-  convert_daily()
+  convert_daily2()
 
 df_liz <- combine_weather_daily(list(df_liz1, df_liz2))
 
@@ -180,7 +135,7 @@ cos_ex <- 'excel/'
 
 liz_c1 <- 'COSMOS lizrd for NE.CSV'
 df_liz_c1 <- from_cosmos_collate(paste0(data_liz, cosmos, liz_c1), sitecode = 'B40') %>%
-  convert_daily()
+  convert_daily2()
 
 liz_c2 <- 'LIZRD_JUN_2017.csv'
 df_liz_c2 <- from_cosmos_month_csv3(paste0(data_liz, cosmos, liz_c2), 'B40', date_f = '%d/%m/%Y')
@@ -239,7 +194,7 @@ get_rep_site <- function(sitecode) {
   }
   
   df_representative <- combine_weather_hourly(c(list_rep_ex, list_rep_csv)) %>%
-    convert_daily()
+    convert_daily2()
   
   return(df_representative)
 }
@@ -283,20 +238,22 @@ df_comb <- prep_plot(df_modelled, df_ing, 'ingleborough')
 df_comb <- prep_plot(df_modelled, df_liz, 'the.lizard')
 df_comb <- prep_plot(df_modelled, df_liz_cos, 'the.lizard')
 
+df_comb$col_mod_tmax <- ifelse(is.na(df_comb$col_tmax), df_comb$mod_tmax, df_comb$col_tmax)
+df_comb$col_mod_tmin <- ifelse(is.na(df_comb$col_tmin), df_comb$mod_tmin, df_comb$col_tmin)
+
 df_comb$col_mod_rain <- ifelse(is.na(df_comb$col_rain), df_comb$mod_rain, df_comb$col_rain)
 df_comb$cum_mod_rain <- cumsum(df_comb[['mod_rain']])
 df_comb$cum_col_rain <- cumsum(df_comb[['col_mod_rain']])
 
 df_comb <- df_comb %>%
-  mutate(no_rain_data = is.na(col_rain))
-
-df_comb <- df_comb %>%
   dplyr::mutate(m_tmin_r = zoo::rollapply(mod_tmin, 7, mean, na.rm = TRUE, fill = NA),
                 c_time_r = zoo::rollapply(col_tmin, 7, mean, na.rm = TRUE, fill = NA),
                 m_tmax_r = zoo::rollapply(mod_tmax, 7, mean, na.rm = TRUE, fill = NA),
-                c_tmax_r = zoo::rollapply(col_tmax, 7, mean, na.rm = TRUE, fill = NA))
+                c_tmax_r = zoo::rollapply(col_tmax, 7, mean, na.rm = TRUE, fill = NA),
+                cm_tmax_r = zoo::rollapply(col_mod_tmax, 7, mean, na.rm = TRUE, fill = NA),
+                cm_tmin_r = zoo::rollapply(col_mod_tmin, 7, mean, na.rm = TRUE, fill = NA))
 
-df_miss2 <- df_comb %>%
+df_miss_rain <- df_comb %>%
   mutate(col_rain = ifelse(is.na(col_rain), 69, col_rain)) %>%
   group_by(group = cumsum(c(0, diff(col_rain) != 0))) %>%
   filter(col_rain == 69 & n() > 10) %>%
@@ -306,28 +263,86 @@ df_miss2 <- df_comb %>%
   ungroup() %>%
   select(-matches("group"))
 
+df_miss_temp <- df_comb %>%
+  mutate(col_tmax = ifelse(is.na(col_tmax), 69, col_tmax)) %>%
+  group_by(group = cumsum(c(0, diff(col_tmax) != 0))) %>%
+  filter(col_tmax == 69 & n() > 10) %>%
+  summarize("start.date"=min(date),
+            "end.date"=max(date),
+            "Length of Run"=n()) %>%
+  ungroup() %>%
+  select(-matches("group"))
 
-ggplot(df_comb) +
-  geom_line(aes(x=date, y=cum_mod_rain, color='blue')) +
-  geom_line(aes(x=date, y=cum_col_rain, color='red')) +
-  geom_rect(data = df_miss2, ymin = -Inf, ymax = +Inf, 
-            aes(xmin = start.date, xmax = end.date),
-            fill = 'skyblue', alpha = 0.5) +
-  scale_color_discrete(name = "Datasets", labels = c("Modelled", "Collected"))
+decompose_to_tib <- function(col) {
+  
+  Y <- msts(df_comb[[col]], seasonal.periods=365.25)
+  dec <- decompose(Y)
+  
+  df_m_tmax_dec <- tibble(date = df_comb$date,
+                          total = dec[['x']],
+                          seasonal = dec[['seasonal']],
+                          trend = dec[['trend']],
+                          fluctuations = dec[['random']])
+  return(df_m_tmax_dec)
+}
+
+df_m_rain_dec <- decompose_to_tib('cum_mod_rain')
+df_c_rain_dec <- decompose_to_tib('cum_col_rain')
+df_m_tmax_dec <- decompose_to_tib('m_tmax_r')
+df_c_tmax_dec <- decompose_to_tib('cm_tmax_r')
+
+################################################################################
+# visualise
+################################################################################
+
 
 ggplot(df_comb) +
   geom_line(aes(x=date, y=m_tmax_r, color='blue')) +
   geom_line(aes(x=date, y=c_tmax_r, color='red')) +
-  scale_color_discrete(name = "Datasets", labels = c("Modelled", "Collected"))
+  geom_rect(data = df_miss_temp, ymin = -Inf, ymax = +Inf, 
+            aes(xmin = start.date, xmax = end.date),
+            fill = 'skyblue', alpha = 0.5) +
+  scale_color_discrete(name = "Datasets", labels = c("Modelled", "Collected")) +
+  ggtitle('Temp max comparison') + ylab('Temperature')
 
+ggplot(df_m_tmax_dec) +
+  geom_line(aes(x = date, y=trend, color = 'blue')) +
+  geom_line(aes(x = date, y=total, color = 'red')) +
+  scale_color_discrete(name = "Datasets", labels = c("trend", "data")) +
+  ggtitle('Modelled temp max trend') + ylab('Temperature')
 
+ggplot(df_c_tmax_dec) +
+  geom_line(aes(x = date, y=trend, color = 'blue')) +
+  geom_line(aes(x = date, y=total, color = 'red')) +
+  geom_rect(data = df_miss_temp, ymin = -Inf, ymax = +Inf, 
+            aes(xmin = start.date, xmax = end.date),
+            fill = 'skyblue', alpha = 0.5) +
+  scale_color_discrete(name = "Datasets", labels = c("trend", "data")) +
+  ggtitle('Collected temp max trend') + ylab('Temperature')
 
+ggplot(NULL) +
+  geom_line(data=df_m_tmax_dec, aes(x = date, y=seasonal, color = 'blue')) +
+  geom_line(data=df_c_tmax_dec, aes(x = date, y=seasonal, color = 'red')) +
+  scale_color_discrete(name = "Datasets", labels = c("Modelled", "Collected")) +
+  ggtitle('Comparison of temp max seasonality') + ylab('Temperature')
 
+ggplot(NULL) +
+  geom_line(data=df_m_tmax_dec, aes(x = date, y=trend, color = 'blue')) +
+  geom_line(data=df_c_tmax_dec, aes(x = date, y=trend, color = 'red')) +
+  geom_rect(data = df_miss_temp, ymin = -Inf, ymax = +Inf, 
+            aes(xmin = start.date, xmax = end.date),
+            fill = 'skyblue', alpha = 0.5) +
+  scale_color_discrete(name = "Datasets", labels = c("Modelled", "Collected")) +
+  ggtitle('Comparison of temp max trend') + ylab('Temperature')
 
-ggplot() +
-  geom_line(df_cs, aes(x=date, y=rain_mod)) +
-  geom_line(df_cs, aes(x=date, y=rain_col), color='red') +
-  geom_point(df_comb, aes(x=date, y=col_rain), color='red')
+ggplot(NULL) +
+  geom_line(data=df_m_tmax_dec, aes(x = date, y=fluctuations, color = 'blue')) +
+  geom_line(data=df_c_tmax_dec, aes(x = date, y=fluctuations, color = 'red')) +
+  geom_rect(data = df_miss_temp, ymin = -Inf, ymax = +Inf, 
+            aes(xmin = start.date, xmax = end.date),
+            fill = 'skyblue', alpha = 0.5) +
+  scale_color_discrete(name = "Datasets", labels = c("Modelled", "Collected")) +
+  ggtitle('Comparison of temp max fluctuations') + ylab('Temperature')
 
 
 
@@ -335,17 +350,103 @@ ggplot() +
 
 
 ggplot(df_comb) +
-  geom_point(aes(x=date, y=mod_rain)) +
-  geom_point(aes(x=date, y=col_rain), color='red')
+  geom_line(aes(x=date, y=cum_mod_rain, color='blue')) +
+  geom_line(aes(x=date, y=cum_col_rain, color='red')) +
+  geom_rect(data = df_miss_rain, ymin = -Inf, ymax = +Inf, 
+            aes(xmin = start.date, xmax = end.date),
+            fill = 'skyblue', alpha = 0.5) +
+  scale_color_discrete(name = "Datasets", labels = c("Modelled", "Collected")) +
+  ggtitle('Comparison of summed rainfall') + ylab('rain')
+
+ggplot(NULL) +
+  geom_line(data=df_m_rain_dec, aes(x = date, y=seasonal, color = 'blue')) +
+  geom_line(data=df_c_rain_dec, aes(x = date, y=seasonal, color = 'red')) +
+  geom_rect(data=df_miss_rain, ymin = -Inf, ymax = +Inf, 
+            aes(xmin = start.date, xmax = end.date),
+            fill = 'skyblue', alpha = 0.5) +
+  scale_color_discrete(name = "Datasets", labels = c("Modelled", "Collected")) +
+  ggtitle('Comparison of rainfall seasonality') + ylab('rain')
+
+init_m_rain <- df_m_rain_dec$trend[!is.na(df_m_rain_dec$trend)][1]
+init_c_rain <- df_c_rain_dec$trend[!is.na(df_c_rain_dec$trend)][1]
+
+ggplot(NULL) +
+  geom_line(data=df_m_rain_dec, aes(x = date, y=trend - init_m_rain, color = 'blue')) +
+  geom_line(data=df_c_rain_dec, aes(x = date, y=trend - init_c_rain, color = 'red')) +
+  geom_rect(data = df_miss_rain, ymin = -Inf, ymax = +Inf, 
+            aes(xmin = start.date, xmax = end.date),
+            fill = 'skyblue', alpha = 0.5) +
+  scale_color_discrete(name = "Datasets", labels = c("Modelled", "Collected")) +
+  ggtitle('Comparison of rainfall trend') + ylab('rain')
+
+ggplot(NULL) +
+  geom_line(data=df_m_rain_dec, aes(x = date, y=fluctuations, color = 'blue')) +
+  geom_line(data=df_c_rain_dec, aes(x = date, y=fluctuations, color = 'red')) +
+  geom_rect(data = df_miss_rain, ymin = -Inf, ymax = +Inf, 
+            aes(xmin = start.date, xmax = end.date),
+            fill = 'skyblue', alpha = 0.5) +
+  scale_color_discrete(name = "Datasets", labels = c("Modelled", "Collected")) +
+  ggtitle('Comparison of rainfall fluctuations') + ylab('rain')
+
+################################################################################
+# quantifying
+################################################################################
+
+length(df_comb$date)
+
+df_rain <- df_comb[!is.na(df_comb$col_rain), c('date', 'mod_rain', 'col_rain')]
+length(df_rain$mod_rain)
+
+sum(df_rain$mod_rain > 10)
+sum(df_rain$col_rain > 10)
+
+rain_norm_f <- max(c(df_rain$mod_rain, df_rain$col_rain))
+df_rain$mod_norm <- df_rain$mod_rain/rain_norm_f
+df_rain$col_norm <- df_rain$col_rain/rain_norm_f
+DTWDistance(df_rain$mod_norm, df_rain$col_norm)
+
+df_m_dry <- df_rain %>%
+  mutate(mod_rain = ifelse(mod_rain < 1, 69, mod_rain)) %>%
+  group_by(group = cumsum(c(0, diff(mod_rain) != 0))) %>%
+  filter(mod_rain == 69 & n() > 10) %>%
+  summarize("start.date"=min(date),
+            "end.date"=max(date),
+            "Length of Run"=n()) %>%
+  ungroup() %>%
+  select(-matches("group"))
+
+df_c_dry <- df_rain %>%
+  mutate(col_rain = ifelse(col_rain < 1, 69, col_rain)) %>%
+  group_by(group = cumsum(c(0, diff(col_rain) != 0))) %>%
+  filter(col_rain == 69 & n() > 10) %>%
+  summarize("start.date"=min(date),
+            "end.date"=max(date),
+            "Length of Run"=n()) %>%
+  ungroup() %>%
+  select(-matches("group"))
+
+# df_rain2 <- df_comb[!is.na(df_comb$col_rain), c('date', 'cum_mod_rain', 'cum_col_rain')]
+# rain_norm_f <- max(c(df_rain2$cum_mod_rain, df_rain2$cum_col_rain))
+# rain_norm_f
+# DTWDistance(df_rain2$cum_mod_rain, df_rain2$cum_col_rain)
 
 
+df_tmax <- df_comb[!is.na(df_comb$col_tmax), c('date', 'mod_tmax', 'col_tmax')]
+df_tmin <- df_comb[!is.na(df_comb$col_tmin), c('date', 'mod_tmin', 'col_tmin')]
+length(df_tmax$mod_tmax)
 
+temp_norm_f <- max(c(df_tmax$mod_tmax, df_tmax$col_tmax))
+df_tmax$mod_norm <- df_tmax$mod_tmax/temp_norm_f
+df_tmax$col_norm <- df_tmax$col_tmax/temp_norm_f
+DTWDistance(df_tmax$mod_norm, df_tmax$col_norm)
 
+top_thresh <- 0.8*max(c(df_tmax$mod_tmax, df_tmax$col_tmax))
+top_thresh
+sum(df_tmax$mod_tmax > top_thresh)
+sum(df_tmax$col_tmax > top_thresh)
 
-
-
-
-
+sum(df_tmin$mod_tmin <= 0)
+sum(df_tmin$col_tmin <= 0)
 
 ################################################################################
 # scrap
