@@ -360,23 +360,24 @@ for (ii in 1:N_files) {
 ################################################################################
 # Combning it together ready for analysis
 ################################################################################
+
+# combining it all together
 survey_total <- bind_rows(survey_list)
 
+# checking for completely blank rows in the data columns and removing them
 blank_check <- c('Species_richness', 'bare x', 'NVC1', 'MEAN_HEIGHT')
 blank_len <- length(blank_check)
 survey_total <- survey_total[rowSums(is.na(survey_total[,blank_check]))!=blank_len,]
 
-print(colnames(survey_total))
-
+# Keeping only certain columns (removing all of these ones)
 remove_cols <- c('bare ground', 'bare rock', 'bare soil', 'open water',
                    'bare peat', 'bare earth', 'dead wood', 'bare soil/sand',
                  'leaf litter', 'exposed stone', 'exposed rock', 'deadwood',
                  'glacial pebbles', 'NVC10')
-
 survey_total <- survey_total[ , -which(names(survey_total) %in% remove_cols)]
 
+# repacing NA with 0 in certain columns
 replace_na_cols <- c('litter', 'bare x')
-
 survey_total[replace_na_cols][is.na(survey_total[replace_na_cols])] <- 0
 
 
@@ -387,6 +388,8 @@ colnames(survey_total) <-c('Plot_ID', 'Species_richness', 'Species_diversity',
                       'Ruderals', 'NVC_subgroup', 'NVC_group', 'NVC_habitat', 
                       'Vegetation_height', 'STD_HEIGHT', 'Litter', 
                       'Bare_ground')
+
+# Choose how you want to write the final dataframe
 
 write.csv(survey_total, 'report_plots.csv', row.names = FALSE)
 write.csv(survey_total, 'all_plots.csv', row.names = FALSE)
