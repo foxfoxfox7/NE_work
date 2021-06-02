@@ -274,15 +274,15 @@ print(colnames(df_modelled)[grep('rain', colnames(df_modelled))])
 # this is a function in collate functions for combining the modelled data and
 # the collected data in one data frame ready for analysis
 df_comb <- prep_plot(df_modelled, df_ains, 'ainsdale')
-df_comb <- prep_plot(df_modelled, df_ains_rep, 'ainsdale')
-df_comb <- prep_plot(df_modelled, df_bure, 'bure.marshes')
-df_comb <- prep_plot(df_modelled, df_bb, 'burnham.beeches')
-df_comb <- prep_plot(df_modelled, df_burnham_rep, 'burnham.beeches')
-df_comb <- prep_plot(df_modelled, df_cross, 'cross.fell')
-df_comb <- prep_plot(df_modelled, df_cross_rep, 'cross.fell')
-df_comb <- prep_plot(df_modelled, df_ing, 'ingleborough')
-df_comb <- prep_plot(df_modelled, df_liz, 'the.lizard')
-df_comb <- prep_plot(df_modelled, df_liz_cos, 'the.lizard')
+# df_comb <- prep_plot(df_modelled, df_ains_rep, 'ainsdale')
+# df_comb <- prep_plot(df_modelled, df_bure, 'bure.marshes')
+# df_comb <- prep_plot(df_modelled, df_bb, 'burnham.beeches')
+# df_comb <- prep_plot(df_modelled, df_burnham_rep, 'burnham.beeches')
+# df_comb <- prep_plot(df_modelled, df_cross, 'cross.fell')
+# df_comb <- prep_plot(df_modelled, df_cross_rep, 'cross.fell')
+# df_comb <- prep_plot(df_modelled, df_ing, 'ingleborough')
+# df_comb <- prep_plot(df_modelled, df_liz, 'the.lizard')
+# df_comb <- prep_plot(df_modelled, df_liz_cos, 'the.lizard')
 
 # creates new columns that use the colected data unless NA, then uses modelled
 df_comb$col_mod_tmax <- ifelse(is.na(df_comb$col_tmax), df_comb$mod_tmax, df_comb$col_tmax)
@@ -527,28 +527,3 @@ sum(df_tmax$col_tmax > top_thresh)
 # days where the temp went down to 0
 sum(df_tmin$mod_tmin <= 0)
 sum(df_tmin$col_tmin <= 0)
-
-################################################################################
-# scrap
-# this is stuff that i dont need but didnt want to delete in case
-################################################################################
-
-# df_in$date[grep("[0-9]{2}-[A-Za-z]{3}-[0-9]{4}$",df_in$date)] <- paste(
-#   df_in$date[grep("[0-9]{2}-[A-Za-z]{3}-[0-9]{4}$",df_in$date)],"00:00:00")
-
-# df_in[['date']] <- as.POSIXct(df_in[['date']],
-#                               format="%d-%b-%Y %H:%M:%S",
-#                               tz=Sys.timezone())
-
-# add_time <- function(input) {
-#   print(input)
-#
-#   if (!grepl('[ ]', input)) {
-#     return(paste0(input, ' 00:00'))
-#   } else {
-#     return(input)
-#   }
-# }
-
-# df3$OB.TIME2 <- map_chr(df3$OB.TIME, add_time)
-# df3$OB.TIME3 <- gsub('[/+]', '-', df3$OB.TIME2)

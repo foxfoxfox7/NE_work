@@ -1,43 +1,69 @@
 ---
-title: "Martin Down: a Long-Term Monitoring Network report"
+title: "Ingleborough: A Long-Term Monitoring Network report"
 #author: "Kieran Fox"
 #date: "22/02/2021"
 #output: html_document
 output:
   html_document:
+    # This is how to change the css file which will change the overall
+    # look of the report. This is where the edits to font, and colour will be
     css: "./styles/air.css"
+    # includes a table of contents
     toc: true
+    # decides which level of heading goes in the table of contents
     toc_depth: 2
+    # table of contents floats to the left of the rest of the report
     toc_float: true
 ---
 
 ```{r setup, echo=FALSE, include=FALSE}
 source('./data_prep_figure4.R')
 knitr::opts_chunk$set(echo = FALSE)
+# This sets the figures to the right ratio and the width of the text in the css
 opts_chunk$set(fig.width=8.65, fig.height=5)
 warning=FALSE
-setwd('C:/Users/kiera/Work/NE_work/Report')
+
+# Set this to the working directory (the folder with the code in it)
+setwd('//CAM381FS/x955120$/NE_handover/NE_handover/Vegetation/Report')
 ```
 
 ```{r import, include=FALSE}
+# reading in some information i have inputted manually in csv files
+# the name swaps for typos in the haitats as well as the full list of
+# preper names
 name_swap_bap <- get_names('./dataframes/rename_habitat.csv')[[1]]
 name_swap_nvc <- get_names('./dataframes/rename_habitat.csv')[[2]]
 bb_list <- get_names('./dataframes/rename_habitat.csv')[[3]]
 bp_list <- get_names('./dataframes/rename_habitat.csv')[[4]]
 
-df_all <- read_csv('./dataframes/report_plots.csv', col_types = cols()) %>%
+df_all <- read_csv('./dataframes/all_plots.csv', col_types = cols()) %>%
   fix_df(., name_swap_bap)
 
-# for getting teh averages of each habitat
-all_plots <- read_csv('./dataframes/all_plots.csv', col_types = cols()) %>%
-  fix_df(., name_swap_bap)
-
-hab_sum_bb <- get_hab_sums(all_plots, 'BAP_broad')
-hab_sum_bp <- get_hab_sums(all_plots, 'BAP_priority')
-hab_sum_n <- get_hab_sums(all_plots, 'NVC_habitat')
+# summary statistics for all plots with each habitat classification system
+hab_sum_bb <- get_hab_sums(df_all, 'BAP_broad')
+hab_sum_bp <- get_hab_sums(df_all, 'BAP_priority')
+hab_sum_n <- get_hab_sums(df_all, 'NVC_habitat')
 ```
 
 ```{r site_choice, include=FALSE}
+
+################################################################################
+# General
+################################################################################
+
+# choose the sitecode for the site you want
+site_code <- 'SITECODE'
+
+# Taking the data from just one site
+df_site <- filter(df_all, Sitecode == site_code) %>%
+  EastNorth_to_LongLat(.) %>%
+  distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
+
+# Making the sub dataframes with only the major habitats selected
+#object[[1]] is the data frame. object[[2]] is the list of habitats
+df_site.bb <- select_by(df_site, 'BAP_broad', 15)
+df_site.bp <- select_by(df_site, 'BAP_priority', 15)
+df_site.nvc <- select_by(df_site, 'NVC_habitat', 15)
 
 ################################################################################
 # Ingleborough
@@ -47,7 +73,8 @@ hab_sum_n <- get_hab_sums(all_plots, 'NVC_habitat')
 # 
 # # Taking the data from just one site
 # df_site <- filter(df_all, Sitecode == site_code) %>%
-#   transform_coords(.) %>%
+#   #transform_coords(.) %>%
+#   EastNorth_to_LongLat(.) %>%
 #   distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
 # 
 # # Making the sub dataframes with only the major habitats selected
@@ -76,7 +103,7 @@ hab_sum_n <- get_hab_sums(all_plots, 'NVC_habitat')
 ################################################################################
 # Lullington
 ################################################################################
-# 
+
 # site_code <- 'B14'
 # 
 # # Taking the data from just one site
@@ -88,31 +115,31 @@ hab_sum_n <- get_hab_sums(all_plots, 'NVC_habitat')
 # 
 # # Making the sub dataframes with only the major habitats selected
 # #object[[1]] is the data frame. object[[2]] is the list of habitats
-# df_site.bb <- select_by(df_site, 'BAP_broad', 700, 
+# df_site.bb <- select_by(df_site, 'BAP_broad', 700,
 #                         include = c('Calcareous Grassland', 'Dwarf Shrub Heath'))
-# df_site.bp <- select_by(df_site, 'BAP_priority', 700, 
+# df_site.bp <- select_by(df_site, 'BAP_priority', 700,
 #                         include = c('Lowland Calcareous Grassland', 'Lowland Heathland'))
-# df_site.nvc <- select_by(df_site, 'NVC_habitat', 500, 
+# df_site.nvc <- select_by(df_site, 'NVC_habitat', 500,
 #                          include = c('Calcareous grassland (CG)', 'Heath (H)'))
 
 ################################################################################
 # Martin Down
 ################################################################################
 
-site_code <- 'B15'
-
-# Taking the data from just one site
-df_site <- filter(df_all, Sitecode == site_code) %>%
-  transform_coords(.) %>%
-  distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
-
-#df_site <- rem_plot(df_site, c(30, '30', '30a')) # Lullington
-
-# Making the sub dataframes with only the major habitats selected
-#object[[1]] is the data frame. object[[2]] is the list of habitats
-df_site.bb <- select_by(df_site, 'BAP_broad', 15)
-df_site.bp <- select_by(df_site, 'BAP_priority', 15)
-df_site.nvc <- select_by(df_site, 'NVC_habitat', 15)
+# site_code <- 'B15'
+# 
+# # Taking the data from just one site
+# df_site <- filter(df_all, Sitecode == site_code) %>%
+#   transform_coords(.) %>%
+#   distinct(Plot_ID, Sitecode, Year, .keep_all = TRUE)
+# 
+# #df_site <- rem_plot(df_site, c(30, '30', '30a')) # Lullington
+# 
+# # Making the sub dataframes with only the major habitats selected
+# #object[[1]] is the data frame. object[[2]] is the list of habitats
+# df_site.bb <- select_by(df_site, 'BAP_broad', 15)
+# df_site.bp <- select_by(df_site, 'BAP_priority', 15)
+# df_site.nvc <- select_by(df_site, 'NVC_habitat', 15)
 
 ################################################################################
 # Stiperstones
@@ -171,9 +198,7 @@ df_change <- df_site %>%
 
 ## 
 
-The information presented here is a summary of the vegetation data collected through the Long-Term Monitoring Network project. The ultimate aim of LTMN is to survey over long periods of time in order to distinguish between trends and the fluctuations inherent in the environment. We are starting to reach three surveys for each site so we can start to see trends but as yet, they are difficult to have confidence in due to the limited number of data points. However, we want to make the data available so that any information that can be gleaned is accessible. This form of report has been structured so that as each new survey is implemented, the data is added to this report and will be available rapidly after data collection. The content is also being updated and we would greatly appreciate any feedback on the kind of information that is most useful, which parts of the report are difficult to use and any site specific data to present (such as individual species or groups of species). 
-
-We would like to introduce the caveat that while we have attempted to conduct the survey at a similar date in the year, there can be some small changes between surveys due to logistical difficulties. This might have affected the species present.
+The information presented here is a summary of the vegetation data collected through the Long-Term Monitoring Network (LTMN) project. The ultimate aim of LTMN is to survey over long periods of time in order to distinguish between trends and the fluctuations inherent in the environment. We are starting to reach three surveys so trends may be starting to emerge. This form of report has been structured so that as each new survey is implemented, the data is added to this report and will be available rapidly after data collection. The content is also being updated and we would greatly appreciate any feedback on the kind of information that is most useful, which parts of the report are difficult to use and any site specific data to present (such as individual species or groups of species). 
 
 ```{r dates_of_survey}
 display_survey_dates(df_site)
@@ -181,53 +206,49 @@ display_survey_dates(df_site)
 
 ## Habitats {.tabset .tabset-fade}
 
-The sites of the LTMN project have been chosen to represent key Biodiversity Action Plan (BAP) habitats. Individual plots are assigned a BAP broad and priority habitat when data is collected, and where this categorisation is missing, it is filled using the other available data (such as NVC habitat classification). 
+The sites of the LTMN project have been chosen to represent key UK habitats. Individual plots are assigned a broad and priority habitat by the surveyor, and where this categorisation is missing, it is later filled by habitat experts using the available data from the plot. 
 
-Currently we do not present BAP priority habitats as there is too much missing data, but the broad habitat gives a good indication of what the environment at the plot level looks like to the surveyor.
+### Priority habitats
 
-### BAP habitats
-
-##### BAP priority habitats
-```{r Bap_p_habitat}
+##### Priority habitats
+```{r Bap_p_habitat, warning = FALSE}
 df_site_priority <- filter(df_site, BAP_priority != 'Not A Priority Habitat')
 map_hab_by_year(df_site_priority, 'BAP_priority', 'BAP_priority')#df_site.bb[[1]]
 ```
 
-##### BAP broad habitats
-```{r Bap_b_habitat}
+##### Broad habitats
+```{r Bap_b_habitat, warning = FALSE}
 map_hab_by_year(df_site, 'BAP_broad', 'BAP_broad')#df_site.bb[[1]]
 ```
 
-Each circle on the map represents a plot or quadrat. The locations of the plots are recorded so that they can be reused for each survey. This means plots can be compared from year to year and changes are likely due to changing habitat. The exact location is recorded using feno markers placed in the ground. Sometimes these are lost between surveys and in such cases, the coordinates are used to roughly match the location. This can mean that sometimes the plots move a couple of metres. In some cases, not all plots are surveyed each time, typically due to time restraints on the survey.
+Each circle on the map represents a plot or quadrat. The locations of the plots are fixed so that they can be revisited during each survey. The exact location is recorded using feno markers placed in the ground. Sometimes these are lost between surveys and in such cases, the coordinates are used to match the location using high accuracy GPS. This can mean that sometimes the plots move a couple of metres. In some cases, not all plots are surveyed each time, typically due to time restraints on the survey.
 
 ```{r number_of_habs_broad}
 display_no_plots(df_site, 'BAP_broad', 'Species_richness', 
   'Number of each BAP broad habitat')
 ```
 
-There are usually a mix of habitats on LTMN sites with certain habitats being more prominent. We take roughly 50 quadrats each survey which means that the lesser represented habitats usually make up around 2-4 quadrats each. We will in general omit these from the analysis as they are not numerous enough to trust that any changes are not due to chance.
+There are usually a mix of habitats on LTMN sites with certain habitats being more prominent. We aim to take 50 quadrats each survey which will be predominantly made up of key target habitats. Sites have been chosen to represent these specific habitats but due to the random sampling methods, there may be habitats which are not as important for the site included.
 
 ### NVC habitats
 
-After the species data has been collected for each plot, it is processed using MAVIS software which uses the plants and plant abundance to categorise the plots into their NVC habitat classifications. It should be noted that accurate categorisation is often difficult due to sites having a mix of habitats and transitions between them. For this reason the categorisation is given a confidence percentage which is shown when hovering the mouse over the data points on the map below along with the NVC subgroup (subgroup:confidence).
+After the plant species data has been collected for each plot, it is processed using MAVIS software which uses the plants their frequency to categorise each plot into an NVC community. The communities have been grouped into NVC groups such as 'Woodland and Scrub' or 'Calcareous Grassland' and the plots are displayed with their group below. The confidence with which MAVIS has ascribed the plot to the NVC community can be seen by hovering the mouse over the data points on the map below along with the any NVC community classifications (community:confidence).
 
-```{r NVC_habitats}
+```{r NVC_habitats, warning = FALSE}
 #map_hab_by_year(df_site.nvc[[1]], 'NVC_habitat', 'NVC1')
 map_hab_by_year(df_site, 'NVC_habitat', 'NVC1')
 ```
 
-Each circle on the map represents a plot or quadrat. The locations of the plots are recorded so that they can be reused for each survey. This means plots can be compared from year to year and changes are likely due to changing habitat. The exact location is recorded using feno markers placed in the ground. Sometimes these are lost between surveys and in such cases, the coordinates are used to roughly match the location. This can mean that sometimes the plots move a couple of metres. In some cases, not all plots are surveyed each time, typically due to time restraints on the survey.
+Each circle on the map represents a plot or quadrat. The locations of the plots are fixed so that they can be revisited during each survey. The exact location is recorded using feno markers placed in the ground. Sometimes these are lost between surveys and in such cases, the coordinates are used to match the location using high accuracy GPS. This can mean that sometimes the plots move a couple of metres. In some cases, not all plots are surveyed each time, typically due to time restraints on the survey.
 
 ```{r number_of_habs_nvc}
 display_no_plots(df_site, 'NVC_habitat', 'Species_richness', 
   'Number of each NVC habitat group')
 ```
 
-There are usually a mix of habitats on LTMN sites with certain habitats being more prominent. We take roughly 50 quadrats each survey which means that the lesser represented habitats usually make up around 2-4 quadrats each. We will in general omit these from the analysis as they are not numerous enough to trust that any changes are not due to chance.
-
 ### NVC habitat communities
 
-Within each larger NVC group of communities (i.e. H, CG, W), there are many differences between the communities (i.e. CG2, CG6). For each major NVC group, the individual community split is displayed below over the years.
+Within each larger NVC group of communities (i.e. H, CG, W), there are many differences between the communities (i.e. CG2, CG6). For each major NVC group, the individual NVC community split is displayed below over the years.
 
 ```{r NVC_subgroups}
 habitat_by_habitat('NVC_habitat', 'NVC_group')
@@ -239,11 +260,11 @@ habitat_by_habitat('NVC_habitat', 'NVC_group')
 int_map_feat_by_hab(df_site, c('Species_richness', 'Species_diversity'))
 ```
 
-Species richness (the number of different species found in each plot) and species diversity (a measure of how even the species populations within a plot are) are recorded and mapped onto the site. A darker shade of blue indicates a higher richness/diversity. Only plots from the most recent survey are included on this map.
+Species richness (the number of different species found in each plot) and species diversity (Simpson's diversity index) are recorded and mapped onto the site. A darker shade of blue indicates a higher richness/diversity. Only plots from the most recent survey are included on this map.
 
 ### Species richness
 
-Total number of unique species found in each plot is recorded. The distributions of species numbers in each habitat over multiple surveys can then be compared
+In these box and whisker diagrams, only the key habitats on the site are shown.
 
 ##### Average change over the years
 
@@ -300,7 +321,7 @@ Map showing where changes are located. Each year shows the change from the last 
 ### Individual species plot
 
 ```{r individual_species, echo=FALSE}
-plot_ind_species('./dataframes/all_species_pc.csv', 
+plot_ind_species('./dataframes/species_pc.csv', 
                  './dataframes/Positive_indicators.csv', 
                  site_code)
 ```
@@ -310,8 +331,6 @@ Hover the mouse over each line to get details. Click on species in the legend to
 ## Vegetation structure {.tabset .tabset-fade}
 
 ```{r physical_map}
-#df_site2 <- rem_plot(df_site, c(118, '118')) # martin down
-#df_site2 <- rem_plot(df_site, c(14, '14', '14a')) # thursley
 int_map_feat_by_hab(df_site, c('Vegetation_height', 'Litter', 'Bare_ground'))
 ```
 
@@ -348,7 +367,7 @@ Map showing where changes are located. Each year shows the change from the last 
 
 ### Litter
 
-Presence of litter is recorded in each of the 25 subdivisions of the larger quadrat and each plot is then given a recording of 0-25 for presence of litter.
+Presence of litter is recorded in each of the 25 subdivisions of the larger quadrat and each plot is then given an overall recording of 0-25 for presence of litter.
 
 ##### Average change over the years
 
@@ -376,7 +395,7 @@ Map showing where changes are located. Each year shows the change from the last 
 
 ### Bare ground
 
-Presence of bare ground is recorded in each of the 25 subdivisions of the larger quadrat and each plot is then given a recording of 0-25 for presence of litter. 
+Presence of bare ground is recorded in each of the 25 subdivisions of the larger quadrat and each plot is then given an overall recording of 0-25 for presence of litter. 
 
 ##### Average change over the years
 
@@ -404,9 +423,9 @@ Map showing where changes are located. Each year shows the change from the last 
 
 ## Ellenberg scores {.tabset .tabset-fade}
 
-These are scores of 'light', 'fertility', 'pH', and 'wetness' for each plot, given by the plant species found. They are not a direct measurement of the feature but instead, plants are given a score for each, depending on how they like the particular feature. The plants in the plot are then averaged to give a plant favourability score for each plot. A high wetness score means the plants in that plot favour a wet environment and a low fertility score means the plants favour an relatively infertile soil.
+These are scores of 'light', 'fertility', 'pH', and 'wetness' for each plot, derived from the plant species present. A high wetness score means the plants in that plot favour a wet environment and a low fertility score means the plants favour an relatively infertile soil.
 
-Ellenberg scores where first assigned by Ellenberg _et al._ (1991) for a large number of european flora species, based on experimental work as well as field observation. These scores were assigned using a central European environment and so were later adapted by Hill _et al._ (1999, 2000) for the British environment. 
+Ellenberg scores were first assigned by Ellenberg _et al._ (1991) for a large number of european flora species, based on experimental work as well as field observation. These scores were assigned using a central European environment and so were later adapted by Hill _et al._ (1999, 2000) for the British environment. 
 
 ```{r ellenberg_map}
 int_map_feat_by_hab(df_site, c('Light', 'Fertility', 'pH', 'Wetness'))
@@ -414,7 +433,7 @@ int_map_feat_by_hab(df_site, c('Light', 'Fertility', 'pH', 'Wetness'))
 
 This map shows a darker shade of blue for higher Ellenberg scores. Only plots from the most recent survey are included on this map.
 
-The pH scores here are not 'pH' but a value of alkaline favourability of the plants found on the plot. They have no units and do not scale in the same way that pH scales (with 7 as neutral). Large scores mean that the plants on the plot prefer alkaline soils.
+The pH scores here are not 'pH' but a value of alkaline preference of the plants found on the plot. They have no units and do not scale in the same way that pH scales (with 7 as neutral). Large scores mean that the plants on the plot prefer alkaline soils.
 
 ### Light
 
@@ -530,7 +549,7 @@ Map showing where changes are located. Each year shows the change from the last 
 
 ## Grime's scores {.tabset .tabset-fade}
 
-Universal adaptive strategy theory (UAST) is a method of categorising plants according to their survival strategy. There are three main ways in which a plant can specialise in order to take advantage of its environment. The first is by taking advantage of available of resources and maximising acquisition at the expense of competitors. Plants are given a 'competition' score to represent the extent to which they use this strategy. The second is by being able to deal with a small amount of resources while other species are not able to maintain in such a stressful environment. Plants are given a 'stress' score to represent the extent to which they use this strategy. The third and final strategy is with rapid completion of the life-cycle which can be advantageous in environments where events are frequently lethal to the plant. Plants are given a 'ruderals' score to represent the extent to which they use this strategy.
+Universal adaptive strategy theory (UAST) is a method of categorising plants according to their survival strategy. There are three main ways in which a plant can specialise in order to take advantage of its environment. The first is by taking advantage of available resources and maximising acquisition at the expense of competitors. Plants are given a 'competition' score to represent the extent to which they use this strategy. The second is by being able to deal with a small amount of resources while other species are not able to maintain in such a stressful environment. Plants are given a 'stress' tolerator score to represent the extent to which they use this strategy. The third and final strategy is a rapid completion of the life-cycle, which can be advantageous in environments where events are frequently lethal to the plant. Plants are given a 'ruderals' score to represent the extent to which they use this strategy.
 
 A large number of British species were placed in this triangle with assigned scores for stress, competition and ruderals by Grime _et al._ (1988, 1995)
 
@@ -542,7 +561,7 @@ Individual plots have been taken and the average 'stress', 'competition' and 'ru
 
 ### Competition
 
-Plants with a high competition score thrive in environments with low disturbance and low intensity stress. They are able to outcompete other plants for the most valuable resources through rapid growth, physical spread and a high capacity for phenotype plasticity (enabling them to adapt to seasons and changing availablity of resources).
+Plants with a high competition score thrive in environments with low disturbance and low intensity stress. They are able to outcompete other plants for the most valuable resources through rapid growth, physical spread and a high capacity for phenotype plasticity (enabling them to adapt to seasons and changing availability of resources).
 
 ##### Average change over the years
 
@@ -598,7 +617,7 @@ Map showing where changes are located. Each year shows the change from the last 
 
 ### Ruderals
 
-Ruderals thrive in low stress environments but with lots of disturbance. They will quickly complete their lifecycle and often release are large amount of seed. Plants that have adapted to this strategy are often found in recently disturbed land and are often annuals.
+Ruderals thrive in low stress environments but with lots of disturbance. They will quickly complete their lifecycle and often release a large amount of seed. Plants that have adapted to this strategy are often found in recently disturbed land and are often annuals.
 
 ##### Average change over the years
 
@@ -630,7 +649,7 @@ For more information contact the LTMN team:
 
 Project manager - kate.fagan@naturalengland.org.uk
 
-Vegetation lead - sarah.grinstead@naturalengland.org.uk
+Vegetation lead - sarah.grinsted@naturalengland.org.uk
 
 Author and analyst - kieran.fox@naturalengland.org.uk
 
